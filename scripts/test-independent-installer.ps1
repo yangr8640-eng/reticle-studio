@@ -8,7 +8,7 @@ $tokens = $null
 $parseErrors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$tokens, [ref]$parseErrors)
 if ($parseErrors.Count) { throw 'Installer has syntax errors.' }
-foreach ($name in @('Assert-NoReparsePath','Assert-ProtectedDirectory','Assert-ProtectedAcl','Get-IndependentShortcut','Test-IndependentShortcut','Write-IndependentShortcut','Assert-ExpectedCertificateThumbprint')) {
+foreach ($name in @('Assert-NoReparsePath','Assert-ProtectedDirectory','Assert-ProtectedAcl','Initialize-IndependentShortcut','Get-IndependentShortcut','Test-IndependentShortcut','Write-IndependentShortcut','Assert-ExpectedCertificateThumbprint')) {
     $definition = $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] }, $true) | Where-Object Name -eq $name
     if (@($definition).Count -ne 1) { throw "Missing installer function: $name" }
     . ([scriptblock]::Create($definition.Extent.Text))
@@ -80,6 +80,11 @@ Check 'Malformed expected thumbprint is rejected before reading a package' {
 $uninstallerPath = Join-Path $PSScriptRoot 'uninstall-independent.ps1'
 $uninstallerAst = [Management.Automation.Language.Parser]::ParseFile($uninstallerPath, [ref]$tokens, [ref]$parseErrors)
 if ($parseErrors.Count) { throw 'Uninstaller has syntax errors.' }
+Check 'Installer and standalone uninstaller use the same Unicode COM contract' {
+    $installerInitializer = $ast.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Initialize-IndependentShortcut' }, $true)
+    $uninstallerInitializer = $uninstallerAst.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Initialize-IndependentShortcut' }, $true)
+    if (@($uninstallerInitializer).Count -ne 1 -or $installerInitializer.Extent.Text.Replace("`r`n","`n") -ne $uninstallerInitializer.Extent.Text.Replace("`r`n","`n")) { throw 'Installer and uninstaller shortcut interop declarations differ.' }
+}
 $definition = $uninstallerAst.FindAll({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-OwnedShortcut' }, $true)
 if (@($definition).Count -ne 1) { throw 'Missing owned-shortcut check in uninstaller.' }
 . ([scriptblock]::Create($definition.Extent.Text))
@@ -89,6 +94,12 @@ $target = Join-Path $env:SystemRoot 'System32\notepad.exe'
 $otherTarget = Join-Path $env:SystemRoot 'System32\cmd.exe'
 New-Item -ItemType Directory -Path $shortcutTestRoot | Out-Null
 try {
+    Check 'Native shortcut supports an ASCII file name' {
+        $asciiPath = Join-Path $shortcutTestRoot 'Reticle Studio ASCII.lnk'
+        Write-IndependentShortcut $asciiPath $target
+        if (-not (Test-OwnedShortcut $asciiPath $target)) { throw 'ASCII shortcut did not round trip.' }
+        Remove-Item -LiteralPath $asciiPath
+    }
     Check 'Shortcut saves target, independent argument, working directory and icon' {
         Write-IndependentShortcut $shortcutPath $target
         $saved = Get-IndependentShortcut $shortcutPath
@@ -102,13 +113,7 @@ try {
         if (-not (Test-OwnedShortcut $shortcutPath $target) -or (Test-OwnedShortcut $shortcutPath $otherTarget)) { throw 'Shortcut ownership check failed.' }
     }
     Check 'Installer refuses to overwrite a shortcut for a different application' {
-        $shell = New-Object -ComObject WScript.Shell
-        $link = $null
-        try { $link = $shell.CreateShortcut($shortcutPath); $link.TargetPath=$otherTarget; $link.Arguments=''; $link.Save() }
-        finally {
-            if ($null -ne $link) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link) }
-            [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell)
-        }
+        [ReticleIndependent.NativeShortcut]::Write($shortcutPath,$otherTarget,[IO.Path]::GetDirectoryName($otherTarget),'')
         $rejected = $false
         try { Write-IndependentShortcut $shortcutPath $target }
         catch { if ($_.Exception.Message -notlike '*different shortcut*') { throw }; $rejected = $true }

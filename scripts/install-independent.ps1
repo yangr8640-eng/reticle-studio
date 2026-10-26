@@ -100,16 +100,95 @@ function Set-ProtectedDirectory([string]$Path) {
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new([Security.Principal.SecurityIdentifier]::new('S-1-5-32-545'),[Security.AccessControl.FileSystemRights]::ReadAndExecute,$inherit,$propagation,[Security.AccessControl.AccessControlType]::Allow))
     Set-Acl -LiteralPath $Path -AclObject $acl
 }
-function Get-IndependentShortcut([string]$Path) {
-    $shell = $null; $link = $null
-    try {
-        $shell = New-Object -ComObject WScript.Shell
-        $link = $shell.CreateShortcut($Path)
-        return [pscustomobject]@{ TargetPath=[string]$link.TargetPath; Arguments=[string]$link.Arguments; WorkingDirectory=[string]$link.WorkingDirectory; IconLocation=[string]$link.IconLocation }
-    } finally {
-        if ($null -ne $link) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link) }
-        if ($null -ne $shell) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
+function Initialize-IndependentShortcut {
+    if ('ReticleIndependent.NativeShortcut' -as [type]) { return }
+    # IShellLinkW and IPersistFile preserve UTF-16 paths across Windows locales.
+    # Keep this definition standalone so the
+    # installed uninstaller does not depend on the extracted download.
+    Add-Type -TypeDefinition @'
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
+using System.Text;
+
+namespace ReticleIndependent {
+    [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
+    internal class ShellLinkObject { }
+
+    [ComImport, Guid("000214F9-0000-0000-C000-000000000046"),
+     InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    internal interface IShellLinkW {
+        void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int count, IntPtr findData, uint flags);
+        void GetIDList(out IntPtr itemList);
+        void SetIDList(IntPtr itemList);
+        void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder text, int count);
+        void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string text);
+        void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder directory, int count);
+        void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string directory);
+        void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder arguments, int count);
+        void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string arguments);
+        void GetHotkey(out short hotkey);
+        void SetHotkey(short hotkey);
+        void GetShowCmd(out int command);
+        void SetShowCmd(int command);
+        void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder path, int count, out int index);
+        void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string path, int index);
+        void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string path, uint reserved);
+        void Resolve(IntPtr window, uint flags);
+        void SetPath([MarshalAs(UnmanagedType.LPWStr)] string path);
     }
+
+    public sealed class ShortcutInfo {
+        public string TargetPath { get; set; }
+        public string Arguments { get; set; }
+        public string WorkingDirectory { get; set; }
+        public string IconLocation { get; set; }
+    }
+
+    public static class NativeShortcut {
+        public static ShortcutInfo Read(string path) {
+            object instance = new ShellLinkObject();
+            try {
+                ((IPersistFile)instance).Load(path, 0);
+                IShellLinkW link = (IShellLinkW)instance;
+                StringBuilder target = new StringBuilder(32768);
+                StringBuilder arguments = new StringBuilder(32768);
+                StringBuilder working = new StringBuilder(32768);
+                StringBuilder icon = new StringBuilder(32768);
+                int iconIndex;
+                link.GetPath(target, target.Capacity, IntPtr.Zero, 4);
+                link.GetArguments(arguments, arguments.Capacity);
+                link.GetWorkingDirectory(working, working.Capacity);
+                link.GetIconLocation(icon, icon.Capacity, out iconIndex);
+                return new ShortcutInfo {
+                    TargetPath = target.ToString(), Arguments = arguments.ToString(),
+                    WorkingDirectory = working.ToString(),
+                    IconLocation = icon.ToString() + "," + iconIndex.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                };
+            } finally { Marshal.FinalReleaseComObject(instance); }
+        }
+
+        public static void Write(string path, string target, string working, string arguments) {
+            object instance = new ShellLinkObject();
+            try {
+                IShellLinkW link = (IShellLinkW)instance;
+                link.SetPath(target);
+                link.SetArguments(arguments);
+                link.SetWorkingDirectory(working);
+                link.SetIconLocation(target, 0);
+                link.SetDescription("Reticle Studio independent fullscreen overlay");
+                link.SetShowCmd(1);
+                ((IPersistFile)instance).Save(path, true);
+            } finally { Marshal.FinalReleaseComObject(instance); }
+        }
+    }
+}
+'@
+}
+function Get-IndependentShortcut([string]$Path) {
+    Initialize-IndependentShortcut
+    return [ReticleIndependent.NativeShortcut]::Read($Path)
 }
 function Test-IndependentShortcut([string]$Path, [string]$EditorExecutable) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
@@ -121,20 +200,8 @@ function Test-IndependentShortcut([string]$Path, [string]$EditorExecutable) {
 function Write-IndependentShortcut([string]$Path, [string]$EditorExecutable) {
     Assert-NoReparsePath $Path
     if ((Test-Path -LiteralPath $Path) -and -not (Test-IndependentShortcut $Path $EditorExecutable)) { throw "A different shortcut already exists: $Path" }
-    $shell = $null; $link = $null
-    try {
-        $shell = New-Object -ComObject WScript.Shell
-        $link = $shell.CreateShortcut($Path)
-        $link.TargetPath = $EditorExecutable
-        $link.Arguments = '--independent'
-        $link.WorkingDirectory = [IO.Path]::GetDirectoryName($EditorExecutable)
-        $link.IconLocation = $EditorExecutable + ',0'
-        $link.Description = 'Reticle Studio independent fullscreen overlay'
-        $link.Save()
-    } finally {
-        if ($null -ne $link) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($link) }
-        if ($null -ne $shell) { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
-    }
+    Initialize-IndependentShortcut
+    [ReticleIndependent.NativeShortcut]::Write($Path, $EditorExecutable, [IO.Path]::GetDirectoryName($EditorExecutable), '--independent')
     if (-not (Test-IndependentShortcut $Path $EditorExecutable)) { throw 'Desktop shortcut verification failed.' }
 }
 function Remove-OwnedInstallDirectory([string]$Path) {
