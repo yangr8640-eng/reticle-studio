@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Gaming.XboxGameBar;
 using Windows.Foundation;
@@ -18,7 +19,7 @@ namespace Reticle.GameBar
         private XboxGameBarWidget widget;
         private DisplayInformation display;
         private CrosshairModel settings = new CrosshairModel();
-        private bool reading, resizing, disposed, paused, enabled = true, hasLiveState, lastSync = true;
+        private bool reading, resizing, disposed, paused, enabled = true, hasLiveState, hasSeenLiveFile, lastSync = true;
         private DateTimeOffset lastUpdate;
         private string previousText;
         private Size? lastRequestedSize;
@@ -69,13 +70,14 @@ namespace Reticle.GameBar
                 bool sync = ConfigurationReader.UseDesktopSync;
                 if (lastSync != sync)
                 {
-                    lastSync = sync; previousText = null; hasLiveState = false;
+                    lastSync = sync; previousText = null; hasLiveState = false; hasSeenLiveFile = false;
                     settings = new CrosshairModel(); enabled = true;
                 }
                 var item = await ApplicationData.Current.LocalFolder.TryGetItemAsync(sync ? ConfigurationReader.LiveFileName : ConfigurationReader.ImportFileName);
                 if (disposed || paused) return;
                 if (item is StorageFile)
                 {
+                    if (sync) hasSeenLiveFile = true;
                     string text = await ConfigurationReader.ReadBoundedAsync((StorageFile)item);
                     if (disposed || paused) return;
                     // An import or mode switch in the launcher may finish while this read is pending.
@@ -94,7 +96,9 @@ namespace Reticle.GameBar
                     }
                     ReadStatus.Text = sync ? "桌面同步已连接。" : "使用独立导入配置。";
                 }
-                else ReadStatus.Text = sync ? "等待桌面同步，当前显示默认准星。" : "未找到导入配置，当前显示默认准星。";
+                else ReadStatus.Text = sync
+                    ? (hasSeenLiveFile ? "桌面同步文件暂不可用，等待重新连接。" : "等待桌面同步，当前显示默认准星。")
+                    : "未找到导入配置，保留当前准星。";
             }
             catch (Exception error) when (error is IOException || error is UnauthorizedAccessException || error is System.Runtime.InteropServices.COMException || error is ArgumentException || error is FormatException)
             {
@@ -114,7 +118,8 @@ namespace Reticle.GameBar
             double age = (DateTimeOffset.UtcNow - lastUpdate).TotalSeconds;
             bool expired = hasLiveState && (age > 15 || age < -5);
             if (expired) ReadStatus.Text = "桌面同步已超时，准星已隐藏。请重新开启编辑器中的 Game Bar 模式。";
-            Reticle.Draw(settings, DpiScale, enabled && !expired, widget.RequestedOpacity);
+            bool invalidInitialState = hasSeenLiveFile && !hasLiveState;
+            Reticle.Draw(settings, DpiScale, enabled && !expired && !invalidInitialState, widget.RequestedOpacity);
         }
 
         private async Task ResizeAndCenterAsync(bool force)
@@ -145,15 +150,24 @@ namespace Reticle.GameBar
         private void Reticle_SizeChanged(object sender, SizeChangedEventArgs args) { Draw(); }
         private async void Display_DpiChanged(DisplayInformation sender, object args)
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () => { if (disposed) return; await ResizeAndCenterAsync(true); Draw(); });
+            await OnUiAsync(async () => { await ResizeAndCenterAsync(true); Draw(); });
         }
         private async void Widget_Changed(XboxGameBarWidget sender, object args)
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { if (disposed) return; UpdateInstructions(); Draw(); });
+            await OnUiAsync(() => { UpdateInstructions(); Draw(); });
         }
         private async void Widget_BoundsChanged(XboxGameBarWidget sender, object args)
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { if (!disposed) Draw(); });
+            await OnUiAsync(Draw);
+        }
+        private async Task OnUiAsync(Action action)
+        {
+            if (disposed) return;
+            try { await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { if (!disposed) action(); }); }
+            // Game Bar can deliver a final event while the view dispatcher is shutting down.
+            catch (COMException) { }
+            catch (TaskCanceledException) { }
+            catch (ObjectDisposedException) { }
         }
         private void UpdateInstructions()
         {

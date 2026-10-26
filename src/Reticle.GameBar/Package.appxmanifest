@@ -2,8 +2,10 @@
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
          xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
          xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
-         IgnorableNamespaces="uap uap3">
+         xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+         IgnorableNamespaces="uap uap3 mp">
   <Identity Name="ReticleStudio.GameBar" Publisher="CN=ReticleStudio" Version="0.3.0.0" />
+  <mp:PhoneIdentity PhoneProductId="DAAEE293-70F8-4786-9775-7714E45AA709" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>Reticle Studio Game Bar</DisplayName>
     <PublisherDisplayName>Reticle Studio</PublisherDisplayName>

@@ -80,6 +80,7 @@ try {
     $certificateName = 'ReticleStudio.GameBar.Preview.cer'
     Export-Certificate -Cert $certificate -FilePath (Join-Path $payloadRoot $certificateName) -Type CERT | Out-Null
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'install-gamebar.ps1') -Destination $payloadRoot
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'check-fullscreen.ps1') -Destination $payloadRoot
     $guidePath = Join-Path $root 'docs\fullscreen-gamebar.md'
     if (Test-Path -LiteralPath $guidePath) { Copy-Item -LiteralPath $guidePath -Destination (Join-Path $payloadRoot 'README.md') }
     @"
@@ -101,6 +102,10 @@ $($certificate.Thumbprint)
 4. Run .\install-gamebar.ps1 in your normal user PowerShell to install the app
    and its bundled Microsoft frameworks for that account.
 5. Open Xbox Game Bar, choose Reticle Studio from the widget menu, and pin it.
+
+Optional read-only environment report:
+   .\check-fullscreen.ps1
+This reports Game Bar and game compatibility settings without changing them.
 
 The installer does not alter developer mode, execution policy, or security
 settings. If your policy blocks running scripts, inspect the script and follow

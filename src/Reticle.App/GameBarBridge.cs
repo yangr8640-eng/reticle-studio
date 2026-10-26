@@ -30,11 +30,13 @@ internal sealed class GameBarBridge
         store = null;
         try
         {
+            if (!IsInstalled("Microsoft.XboxGamingOverlay_8wekyb3d8bbwe"))
+            {
+                message = "未找到 Xbox Game Bar，请先从 Microsoft Store 安装。";
+                return false;
+            }
             string family = PackageFamilyName;
-            uint count = 0, length = 0;
-            int error = GetPackagesByPackageFamily(family, ref count, IntPtr.Zero, ref length, IntPtr.Zero);
-            if (error != 0 && error != 122) throw new Win32Exception(error);
-            if (count == 0)
+            if (!IsInstalled(family))
             {
                 message = "请先安装 Reticle Game Bar 全屏组件，再重新开启。";
                 return false;
@@ -49,6 +51,14 @@ internal sealed class GameBarBridge
             message = "无法连接全屏组件：" + e.Message;
             return false;
         }
+    }
+
+    private static bool IsInstalled(string family)
+    {
+        uint count = 0, length = 0;
+        int error = GetPackagesByPackageFamily(family, ref count, IntPtr.Zero, ref length, IntPtr.Zero);
+        if (error != 0 && error != 122) throw new Win32Exception(error);
+        return count != 0;
     }
 
     public bool TrySend(CrosshairSettings settings, bool enabled, out string? error)

@@ -11,6 +11,7 @@ on:
       - 'scripts/build.ps1'
       - 'scripts/build-gamebar.ps1'
       - 'scripts/install-gamebar.ps1'
+      - 'scripts/check-fullscreen.ps1'
       - 'docs/fullscreen-gamebar.md'
       - '.github/workflows/gamebar.yml'
   workflow_dispatch:

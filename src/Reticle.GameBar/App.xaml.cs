@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Microsoft.Gaming.XboxGameBar;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
@@ -57,7 +59,7 @@ namespace Reticle.GameBar
                 List<WidgetPage> pages;
                 lock (widgetPages) pages = new List<WidgetPage>(widgetPages.Values);
                 foreach (var page in pages)
-                    await page.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, page.Pause);
+                    await RunOnPageAsync(page, page.Pause);
             }
             finally { deferral.Complete(); }
         }
@@ -67,7 +69,16 @@ namespace Reticle.GameBar
             List<WidgetPage> pages;
             lock (widgetPages) pages = new List<WidgetPage>(widgetPages.Values);
             foreach (var page in pages)
-                await page.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, page.Resume);
+                await RunOnPageAsync(page, page.Resume);
+        }
+
+        private static async Task RunOnPageAsync(WidgetPage page, Action action)
+        {
+            try { await page.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => action()); }
+            // A widget can close between the snapshot above and dispatch to its UI thread.
+            catch (COMException) { }
+            catch (TaskCanceledException) { }
+            catch (ObjectDisposedException) { }
         }
     }
 }

@@ -38,6 +38,74 @@ function Read-AppxManifest([string]$Path) {
     } finally { $archive.Dispose() }
 }
 
+function Get-AuthenticodePolicyResult([string]$Path) {
+    # PowerShell collapses CERT_E_UNTRUSTEDROOT into UnknownError. Retrieve the
+    # actual policy result rather than accepting unrelated UnknownError failures.
+    if (-not ('ReticlePreview.NativeSignatureVerifier' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+namespace ReticlePreview
+{
+    public static class NativeSignatureVerifier
+    {
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct WINTRUST_FILE_INFO
+        {
+            public uint cbStruct;
+            [MarshalAs(UnmanagedType.LPWStr)] public string filePath;
+            public IntPtr fileHandle;
+            public IntPtr knownSubject;
+        }
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WINTRUST_DATA
+        {
+            public uint cbStruct;
+            public IntPtr policyCallbackData;
+            public IntPtr sipClientData;
+            public uint uiChoice;
+            public uint revocationChecks;
+            public uint unionChoice;
+            public IntPtr fileInfo;
+            public uint stateAction;
+            public IntPtr stateData;
+            public IntPtr urlReference;
+            public uint providerFlags;
+            public uint uiContext;
+            public IntPtr signatureSettings;
+        }
+        [DllImport("wintrust.dll", ExactSpelling = true)]
+        private static extern uint WinVerifyTrust(IntPtr window, ref Guid action, ref WINTRUST_DATA data);
+        public static uint Verify(string path)
+        {
+            WINTRUST_FILE_INFO file = new WINTRUST_FILE_INFO();
+            file.cbStruct = (uint)Marshal.SizeOf(typeof(WINTRUST_FILE_INFO));
+            file.filePath = path;
+            IntPtr filePointer = Marshal.AllocHGlobal((int)file.cbStruct);
+            Marshal.StructureToPtr(file, filePointer, false);
+            WINTRUST_DATA data = new WINTRUST_DATA();
+            data.cbStruct = (uint)Marshal.SizeOf(typeof(WINTRUST_DATA));
+            data.uiChoice = 2; // WTD_UI_NONE
+            data.unionChoice = 1; // WTD_CHOICE_FILE
+            data.fileInfo = filePointer;
+            data.stateAction = 1; // WTD_STATEACTION_VERIFY
+            Guid action = new Guid("00AAC56B-CD44-11d0-8CC2-00C04FC295EE");
+            try { return WinVerifyTrust(IntPtr.Zero, ref action, ref data); }
+            finally
+            {
+                data.stateAction = 2; // WTD_STATEACTION_CLOSE
+                WinVerifyTrust(IntPtr.Zero, ref action, ref data);
+                Marshal.DestroyStructure(filePointer, typeof(WINTRUST_FILE_INFO));
+                Marshal.FreeHGlobal(filePointer);
+            }
+        }
+    }
+}
+'@
+    }
+    return [ReticlePreview.NativeSignatureVerifier]::Verify($Path)
+}
+
 $filesByName = @{}
 foreach ($file in @($bundle.files)) {
     if ($filesByName.ContainsKey($file.path) -or $file.sha256 -notmatch '^[a-fA-F0-9]{64}$') {
@@ -73,10 +141,17 @@ if ($identity.Name -ne $bundle.identity -or $identity.Publisher -ne $bundle.publ
     throw 'The APPX identity does not match this x64 preview.'
 }
 $signature = Get-AuthenticodeSignature -LiteralPath $appxPath
-if (-not $signature.SignerCertificate -or $signature.SignerCertificate.Thumbprint -ne $certificate.Thumbprint -or
-    $signature.Status.ToString() -notin @('Valid', 'NotTrusted')) {
+if (-not $signature.SignerCertificate -or $signature.SignerCertificate.Thumbprint -ne $certificate.Thumbprint) {
     throw "APPX signature verification failed: $($signature.Status) $($signature.StatusMessage)"
 }
+$signatureAccepted = $signature.Status.ToString() -eq 'Valid'
+if ($signature.Status.ToString() -eq 'UnknownError') {
+    $policyResult = Get-AuthenticodePolicyResult $appxPath
+    # Accept only a not-yet-trusted root on the pinned preview certificate.
+    # In particular, NotTrusted means EXPLICIT_DISTRUST and must never pass.
+    $signatureAccepted = $policyResult -eq [uint32]2148204809 # CERT_E_UNTRUSTEDROOT (0x800B0109)
+}
+if (-not $signatureAccepted) { throw "APPX signature verification failed: $($signature.Status) $($signature.StatusMessage)" }
 
 $dependencyPaths = @()
 $dependencyIdentities = @{}

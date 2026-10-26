@@ -146,10 +146,11 @@ public partial class MainWindow : Window
         if (!gameBarMode) return;
         if (!gameBar.TrySend(settings, overlayEnabled, out string? error))
         {
-            overlayEnabled = false; gameBarTimer.Stop(); gameBarSyncTimer.Stop();
-            UpdateOverlayControls();
-            OverlayStatus.Text = error;
+            // StorageFile readers can briefly hold the previous snapshot during replacement.
+            // Keep the heartbeat active so a transient sharing failure does not disable the crosshair forever.
+            OverlayStatus.Text = error + (overlayEnabled ? "；正在重试。" : "；组件将在心跳超时后隐藏。");
         }
+        else if (overlayEnabled) OverlayStatus.Text = "已发送到组件，请在 Game Bar 中固定";
     }
     private void OverlayMode_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -168,9 +169,9 @@ public partial class MainWindow : Window
         "全屏组件为实验支持，需要另行安装 Reticle Game Bar 预览包。\n\n" +
         "1. 保留 CS 的全屏显示模式。按 Win+G，确认 Game Bar 能显示在游戏画面上。\n" +
         "2. 在 Game Bar 的小组件菜单打开 Reticle 准星，点击固定，并启用鼠标穿透。\n" +
-        "3. 在本工具选择「全屏 · Game Bar（实验）」，点击开启。外观与 Ctrl+Alt+H 开关会同步。\n" +
+        "3. 在本工具选择「全屏 · Game Bar（实验）」，点击开启。外观与 Ctrl+Alt+H 开关会同步；如果组件曾导入独立配置，请先在其启动页点「使用桌面同步」。\n" +
         "4. 在组件中点居中；多屏位置请在 Game Bar 中调整。\n\n" +
-        "需要 Windows / Game Bar 对当前游戏的覆盖支持；CS 游戏内兼容性尚待实测。组件不会修改游戏的显示模式。",
+        "需要 Windows / Game Bar 对当前游戏的覆盖支持。若 Win+G 切出或黑屏，请在 cs2.exe 属性的兼容性页取消「禁用全屏优化」，重启游戏再验证。CS 游戏内兼容性尚待实测。",
         "全屏准星 · Game Bar", MessageBoxButton.OK, MessageBoxImage.Information);
     private void Restore() { Show(); WindowState = WindowState.Normal; Activate(); }
     private void ToggleOverlay_Click(object sender, RoutedEventArgs e) => ToggleOverlay();
