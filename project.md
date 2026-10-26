@@ -26,7 +26,7 @@
 | 版本 | 内容 | 状态 |
 | --- | --- | --- |
 | v0.0.1 | 需求、架构、项目进展文档 | 已提交并打标签 |
-| v0.1.0 | 三类准星、中文编辑器、覆盖层、预设、持久化、便携包 | 已实现并验证，准备推送 |
+| v0.1.0 | 三类准星、中文编辑器、覆盖层、预设、持久化、便携包 | 已实现、验证并推送 GitHub |
 | 后续版本 | 实际游戏、混合 DPI 多屏验证与体验迭代 | 待进行 |
 
 ## 验证计划
@@ -61,7 +61,11 @@
 - 已生成 `artifacts/Reticle-win-x64/Reticle.exe` 和 `artifacts/Reticle-v0.1.0-win-x64.zip`；项目根目录 `Start-Reticle.cmd` 可启动程序。
 - 已通过 OpenClaw 成功向用户发送 WhatsApp，说明 GitHub 同步障碍；联系人信息不写入仓库。
 - 浏览器控制因无法可靠识别当前 URL 而停止；GitHub 改用 Git Credential Manager 的标准认证流程。
-- 用户已创建并提供仓库：`https://github.com/yangr8640-eng/reticle-studio`。已配置为 origin，正在认证和推送。
+- 用户已创建私有仓库：`https://github.com/yangr8640-eng/reticle-studio`，并完成 Git Credential Manager 授权。
+- 源码分支 `codex/reticle-mvp` 及 `v0.0.1`、`v0.1.0` 标签均已推送，远程提交哈希已核对。
+- GitHub Actions 对 v0.1.0 的 Windows 构建、核心检查、打包、产物上传全部成功：[构建记录](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40277775984)。
+- 已发布私有仓库的 [v0.1.0 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.1.0)，包含约 68 MB 的 Windows x64 便携包和 SHA256 文件；GitHub 返回的包摘要与本地一致。
+- v0.1.0 ZIP SHA256：`29ce50bb849492a91dce6b9e5ad464861a8fb3a4da1ba61b8362e8b49ba40e34`。
 
 ## 当前文件与版本
 
@@ -70,13 +74,14 @@
 - `scripts/build.ps1 -Portable`：构建、核心检查、自包含打包。
 - `scripts/test-desktop.ps1`：独立配置下的桌面诊断。
 - `.github/workflows/build.yml`：Windows 构建与便携包工作流。
-- Git 工作分支：`codex/reticle-mvp`；初始文档版本标签：`v0.0.1`。
+- Git 工作分支 / 远程默认分支：`codex/reticle-mvp`；标签：`v0.0.1`、`v0.1.0`。
+- Git 提交身份使用仓库级命令参数 `Codex <codex@localhost>`，未改动用户的全局 Git 身份配置。
 
 ## 待确认 / 待办
 
 - [x] 完成原生桌面 MVP。
 - [x] 完成构建、核心检查和桌面诊断。
 - [x] 创建 Git 版本记录。
-- [ ] 创建或连接 GitHub 仓库并推送。
+- [x] 创建或连接 GitHub 仓库并推送。
 - [x] 确认可用的 WhatsApp 收件对象，并在遇到同步问题时成功联系。
 - [ ] 在实际游戏中验证显示模式、不同 DPI 和多屏效果。

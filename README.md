@@ -8,6 +8,8 @@
 
 本地项目中双击 **`Start-Reticle.cmd`**。便携版位于 `artifacts/Reticle-win-x64/Reticle.exe`，压缩包位于 `artifacts/Reticle-v0.1.0-win-x64.zip`。
 
+远程下载：[GitHub Releases](https://github.com/yangr8640-eng/reticle-studio/releases)。仓库为私有，需要已授权的 GitHub 账号才能访问。
+
 便携版自带 .NET 运行时，解压后双击包内的 **`Reticle.exe`**，无需管理员权限。首次启动准星处于关闭状态，点击“开启桌面准星”即可显示；点击“收起到托盘”可隐藏设置窗口。关闭设置窗口的 × 会退出程序并关闭准星。
 
 推荐在游戏中选择**无边框窗口**或窗口化模式。独占全屏、受保护的渲染表面及其他置顶窗口可能遮挡桌面覆盖层；尚未完成实际游戏兼容性验证。请按所玩游戏与赛事的规则使用，不保证任何反作弊系统允许外部覆盖层。
@@ -70,7 +72,7 @@ docs/              界面预览及验证记录
 project.md         项目范围、版本计划、进展与待办
 ```
 
-`.github/workflows/build.yml` 在推送后执行 Windows 构建、核心检查并上传便携包，尚未在线执行。当前 GitHub 同步状态详见 `project.md`。
+`.github/workflows/build.yml` 在推送后执行 Windows 构建、核心检查并上传便携包；v0.1.0 已在线通过。当前 GitHub 同步状态详见 `project.md`。
 
 ## 实现参考
 
