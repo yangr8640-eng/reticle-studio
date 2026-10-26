@@ -19,7 +19,7 @@
 - 使用独立桌面覆盖层，不读取、修改或注入游戏进程。
 - 首版主要面向窗口化 / 无边框窗口模式；独占全屏能否覆盖需实机验证。
 - 圆形以半径表达中心间距；线条透明度影响整个准星。
-- 默认仅在本机保存配置；GitHub 如需新建仓库，默认设为私有。
+- 默认仅在本机保存配置；GitHub 仓库已按用户要求于 2026-10-26 改为公开。
 
 ## 版本计划
 
@@ -66,6 +66,12 @@
 - GitHub Actions 对 v0.1.0 的 Windows 构建、核心检查、打包、产物上传全部成功：[构建记录](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40277775984)。
 - 已发布私有仓库的 [v0.1.0 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.1.0)，包含约 68 MB 的 Windows x64 便携包和 SHA256 文件；GitHub 返回的包摘要与本地一致。
 - v0.1.0 ZIP SHA256：`29ce50bb849492a91dce6b9e5ad464861a8fb3a4da1ba61b8362e8b49ba40e34`。
+
+### 2026-10-26 · 仓库公开
+
+- 按用户明确要求，将 `yangr8640-eng/reticle-studio` 从私有改为公开。
+- 已通过不携带登录凭据的 GitHub API 请求确认 `visibility=public`，访客可以访问仓库。
+- 已同步更新 README 中的访问和下载说明。
 
 ## 当前文件与版本
 

@@ -8,7 +8,7 @@
 
 本地项目中双击 **`Start-Reticle.cmd`**。便携版位于 `artifacts/Reticle-win-x64/Reticle.exe`，压缩包位于 `artifacts/Reticle-v0.1.0-win-x64.zip`。
 
-远程下载：[GitHub Releases](https://github.com/yangr8640-eng/reticle-studio/releases)。仓库为私有，需要已授权的 GitHub 账号才能访问。
+远程下载：[GitHub Releases](https://github.com/yangr8640-eng/reticle-studio/releases)。仓库已公开，无需登录即可查看源码与下载发行包。
 
 便携版自带 .NET 运行时，解压后双击包内的 **`Reticle.exe`**，无需管理员权限。首次启动准星处于关闭状态，点击“开启桌面准星”即可显示；点击“收起到托盘”可隐藏设置窗口。关闭设置窗口的 × 会退出程序并关闭准星。
 
