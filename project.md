@@ -32,7 +32,7 @@
 | v0.3.0-preview.1 | 独立 Game Bar 组件、编辑器全屏模式、配置同步 | 已发布预览版并在本机安装；CS 全屏实测待完成 |
 | v0.3.0-preview.2 | Game Bar 不透明度修复、绘制诊断及正式组件测试 | 已发布并升级本机，用户确认准星可见 |
 | v0.3.0-preview.3 | 托盘左键单击唤出、手动检查更新 | 已验证、推送并发布；本机已启动新版 |
-| v0.3.0-preview.4 | 托盘右键菜单、未创建桌面窗口时的退出崩溃 | 本地构建、回归和便携打包完成 |
+| v0.3.0-preview.4 | 托盘右键菜单、未创建桌面窗口时的退出崩溃 | 本地验证完成，已推送并发布 |
 | 后续版本 | 实际游戏、混合 DPI 多屏验证与体验迭代 | 待进行 |
 
 ## 验证计划
@@ -133,7 +133,7 @@
 - `scripts/build.ps1 -Portable`：构建、核心检查、自包含打包。
 - `scripts/test-desktop.ps1`：独立配置下的桌面诊断。
 - `.github/workflows/build.yml`：Windows 构建与便携包工作流。
-- 稳定分支 / 远程默认分支：`codex/reticle-mvp`，最新稳定标签 `v0.2.1`。全屏预览分支：`codex/gamebar-fullscreen`，最新编辑器预览标签 `v0.3.0-preview.3`，Game Bar 组件沿用 `v0.3.0-preview.2`。
+- 稳定分支 / 远程默认分支：`codex/reticle-mvp`，最新稳定标签 `v0.2.1`。全屏预览分支：`codex/gamebar-fullscreen`，最新编辑器预览标签 `v0.3.0-preview.4`，Game Bar 组件沿用 `v0.3.0-preview.2`。
 - Git 提交身份使用仓库级命令参数 `Codex <codex@localhost>`，未改动用户的全局 Git 身份配置。
 
 ### 2026-10-26 · v0.3.0-preview.3 托盘与检查更新
@@ -153,6 +153,7 @@
 - 增加菜单展开、取消重开、四个命令、首次启动及 Game Bar 模式退出的回归检查。保留 Apex 在用户当前配置下正常使用的反馈。
 - 原菜单的模拟回调未复现用户的完整现象；鼠标控制被 Escape 停止且恢复尝试仍被工具拒绝，真实任务栏右键验证尚未完成，详见 `docs/testing.md`。
 - Release 构建 0 警告 / 0 错误，24 项核心、31 项 Game Bar 检查通过；开发版和便携版均通过 79 项桌面检查。便携 ZIP SHA256：`296a7ae01c66bac58682f131b60df806e0db6b5d2573089698a864e4a7ca73cb`。
+- 已推送源码 `bcbe32e` 与 `v0.3.0-preview.4` 标签并发布 [preview.4 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.4)。公开 API 已核验两个附件摘要与本地一致，ZIP 内程序与通过便携诊断的程序一致。Windows / Game Bar 的分支及标签 CI 已触发。
 
 ## 待确认 / 待办
 

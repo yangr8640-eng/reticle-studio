@@ -10,6 +10,7 @@
 - 原 WinForms 菜单在模拟原生回调中可正常打开，未完整复现用户的任务栏溢出面板操作；日志确认的退出异常和菜单交互分别处理，不能把日志堆栈当作右键触发关闭原因的完整证明。
 - 菜单渲染图已检查，四个选项完整可见。真实鼠标验证在准备点击时被 Escape 停止；用户允许继续后控制工具仍返回已停止，因此未计入通过项。
 - Release 构建 0 警告 / 0 错误；24 项核心、31 项 Game Bar 检查通过，开发版及自包含便携版均通过 79 项桌面检查（新增 15 项）。便携版报告和菜单图位于 `artifacts/preview4-diagnostics/`。
+- 已发布 [preview.4](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.4)，源码及标签指向 `bcbe32e`，公开 API 已核验 ZIP 与 SHA256 两个附件摘要。包内程序与通过便携诊断的程序一致。
 
 ## 2026-10-26 · Apex Legends 用户实测反馈
 
