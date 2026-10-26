@@ -1,0 +1,125 @@
+using System.IO;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using Reticle.Core;
+
+namespace Reticle.App;
+
+internal static class Diagnostics
+{
+    public static int Run(string outputPath)
+    {
+        var results = new Dictionary<string, object>();
+        string directory = Path.GetDirectoryName(Path.GetFullPath(outputPath))!;
+        Directory.CreateDirectory(directory);
+        var settings = new CrosshairSettings();
+        var overlay = new OverlayWindow(settings);
+        try
+        {
+            IntPtr foreground = NativeMethods.GetForegroundWindow();
+            overlay.SetVisible(true);
+            Pump();
+            int style = NativeMethods.GetWindowLong(overlay.Handle, NativeMethods.GwlExStyle);
+            Check("mouseTransparent", (style & NativeMethods.Transparent) != 0);
+            Check("nonActivating", (style & NativeMethods.NoActivate) != 0);
+            Check("layered", (style & NativeMethods.Layered) != 0);
+            Check("topmost", (style & 8) != 0);
+            Check("noFocusSteal", NativeMethods.GetForegroundWindow() == foreground);
+            var bounds = overlay.SelectedScreen.Bounds;
+            NativeMethods.GetWindowRect(overlay.Handle, out var rect);
+            Check("centered", rect.Left + (rect.Right - rect.Left) / 2 == bounds.Left + bounds.Width / 2 && rect.Top + (rect.Bottom - rect.Top) / 2 == bounds.Top + bounds.Height / 2);
+            settings.OffsetX = 37; settings.OffsetY = -23; overlay.Position();
+            NativeMethods.GetWindowRect(overlay.Handle, out var shifted);
+            Check("positionOffsets", shifted.Left - rect.Left == 37 && shifted.Top - rect.Top == -23);
+            overlay.SetVisible(false);
+            Check("hidden", !NativeMethods.IsWindowVisible(overlay.Handle));
+            overlay.SetVisible(true);
+            Check("shownAgain", NativeMethods.IsWindowVisible(overlay.Handle));
+            bool registered = NativeMethods.RegisterHotKey(overlay.Handle, 99, 0x4003, 0x48);
+            results["hotkeyAvailable"] = registered;
+            if (registered) NativeMethods.UnregisterHotKey(overlay.Handle, 99);
+            overlay.Hide();
+
+            foreach (var shape in Enum.GetValues<CrosshairShape>())
+            {
+                settings = new CrosshairSettings { Shape = shape, Outline = false };
+                var view = new CrosshairView { Settings = settings, Width = 128, Height = 128 };
+                view.Measure(new Size(128, 128)); view.Arrange(new Rect(0, 0, 128, 128)); view.UpdateLayout();
+                var bitmap = Render(view, 128, 128);
+                byte[] pixels = new byte[128 * 128 * 4]; bitmap.CopyPixels(pixels, 128 * 4, 0);
+                int count = Enumerable.Range(0, 128 * 128).Count(i => pixels[i * 4 + 3] > 0);
+                Check(shape + "VisiblePixels", count > 20);
+                Check(shape + "OpenCenter", pixels[(64 * 128 + 64) * 4 + 3] == 0);
+                WritePng(bitmap, Path.Combine(directory, shape + ".png"));
+                settings.Opacity = 0; view.InvalidateVisual(); view.UpdateLayout();
+                bitmap = Render(view, 128, 128); bitmap.CopyPixels(pixels, 128 * 4, 0);
+                Check(shape + "ZeroOpacity", pixels.All(x => x == 0));
+            }
+            // Exercise the real editor layout through WPF without driving the user's desktop.
+            var editorStore = new SettingsStore(Path.Combine(directory, "test-editor-settings.json"));
+            editorStore.Save(new());
+            var editor = new MainWindow(editorStore);
+            editor.ShowActivated = false; editor.Show(); Pump(); editor.UpdateLayout();
+            WritePng(Render(editor, (int)editor.ActualWidth, (int)editor.ActualHeight), Path.Combine(directory, "editor.png"));
+            Check("editorLayout", editor.ActualWidth >= 950 && editor.ActualHeight >= 680);
+            var model = (CrosshairSettings)editor.DataContext;
+            ((System.Windows.Controls.Button)editor.FindName("CircleButton")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            Pump();
+            Check("circleButtonChangesShape", model.Shape == CrosshairShape.Circle);
+            Check("circleShowsRadius", ((UIElement)editor.FindName("CircleControls")).Visibility == Visibility.Visible && ((UIElement)editor.FindName("ArmsControls")).Visibility == Visibility.Collapsed);
+            var colorInput = (System.Windows.Controls.TextBox)editor.FindName("ColorInput");
+            colorInput.Text = "#FF7AA2";
+            Check("colorInputUpdatesModel", model.Color == "#FF7AA2");
+            colorInput.Text = "#ZZZZZZ";
+            Check("invalidColorPreservesPrevious", model.Color == "#FF7AA2" && ((UIElement)editor.FindName("ColorError")).Visibility == Visibility.Visible);
+            colorInput.Text = "#FF7AA2";
+            model.CenterDot = true;
+            Pump(); editor.UpdateLayout();
+            WritePng(Render(editor, (int)editor.ActualWidth, (int)editor.ActualHeight), Path.Combine(directory, "editor-circle.png"));
+            var toggle = (System.Windows.Controls.Button)editor.FindName("ToggleButton");
+            toggle.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            Check("toggleButtonEnablesOverlay", toggle.Content.ToString() == "关闭桌面准星");
+            toggle.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            Check("toggleButtonDisablesOverlay", toggle.Content.ToString() == "开启桌面准星");
+            editor.Width = 950; editor.Height = 680; Pump(); editor.UpdateLayout();
+            WritePng(Render(editor, (int)editor.ActualWidth, (int)editor.ActualHeight), Path.Combine(directory, "editor-small.png"));
+            var togglePosition = toggle.TransformToAncestor(editor).Transform(new Point(0, toggle.ActualHeight));
+            Check("smallWindowButtonFits", togglePosition.Y < editor.ActualHeight - 35);
+            ((System.Windows.Controls.ScrollViewer)editor.FindName("SettingsScroller")).ScrollToBottom();
+            Pump(); editor.UpdateLayout();
+            WritePng(Render(editor, (int)editor.ActualWidth, (int)editor.ActualHeight), Path.Combine(directory, "editor-position.png"));
+            editor.Close();
+            var restored = editorStore.Load(out var loadWarning);
+            Check("editorSavesOnClose", loadWarning is null && restored.Shape == CrosshairShape.Circle && restored.Color == "#FF7AA2" && restored.CenterDot);
+            results["passed"] = true;
+        }
+        catch (Exception e) { results["passed"] = false; results["error"] = e.ToString(); }
+        finally
+        {
+            overlay.Close();
+            File.WriteAllText(outputPath, JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        return results.TryGetValue("passed", out var passed) && passed is true ? 0 : 1;
+
+        void Check(string name, bool pass)
+        {
+            results[name] = pass;
+            if (!pass) throw new InvalidOperationException("Diagnostic failed: " + name);
+        }
+    }
+
+    private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+    private static RenderTargetBitmap Render(Visual visual, int width, int height)
+    {
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(visual); return bitmap;
+    }
+    private static void WritePng(BitmapSource bitmap, string path)
+    {
+        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var file = File.Create(path); encoder.Save(file);
+    }
+}
