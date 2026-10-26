@@ -88,7 +88,7 @@ docs/              界面预览及验证记录
 project.md         项目范围、版本计划、进展与待办
 ```
 
-`.github/workflows/build.yml` 在推送后执行 Windows 构建、核心检查并上传便携包；v0.1.0 已在线通过。当前 GitHub 同步状态详见 `project.md`。
+`.github/workflows/build.yml` 在推送后执行 Windows 构建、核心检查并上传便携包；[v0.2.1 已在线通过](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40298483128)。当前 GitHub 同步状态详见 `project.md`。
 
 ## 实现参考
 
