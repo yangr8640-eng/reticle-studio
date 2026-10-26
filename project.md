@@ -30,6 +30,7 @@
 | v0.2.0 | 可视化调色盘、色相 / 饱和度 / 明度、HEX 与预设联动 | 已验证、推送并发布 |
 | v0.2.1 | 无边框全屏遮挡恢复、位置恢复与显示模式说明 | 已验证、推送并发布 |
 | v0.3.0-preview.1 | 独立 Game Bar 组件、编辑器全屏模式、配置同步 | 已发布预览版并在本机安装；CS 全屏实测待完成 |
+| v0.3.0-preview.2 | Game Bar 不透明度修复、绘制诊断及正式组件测试 | 已发布并升级本机，用户确认准星可见 |
 | 后续版本 | 实际游戏、混合 DPI 多屏验证与体验迭代 | 待进行 |
 
 ## 验证计划
@@ -117,12 +118,20 @@
 - 已推送 `codex/gamebar-fullscreen` 和 `v0.3.0-preview.1` 标签并发布 [全屏预览 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.1)，包含两个 ZIP、两个 SHA256 文件及公开签名信息。五个远端附件摘要均与本地一致，GitHub 最新正式版仍为 v0.2.1。
 - 最终提交 `ba516df` 的分支与标签构建均成功：[Game Bar 标签构建](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40311213334)、[桌面标签构建](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40311213357)。
 
+### v0.3.0-preview.2 显示修复
+
+- 用户已打开并固定组件、开启穿透，仍看不到准星。定位为RequestedOpacity被错误额外除以100；按照微软官方示例修正，并在本机确认真实输入为前台1、固定时0.85。
+- 新增限频本地绘制状态诊断及仅导出组件准星的像素验证，加入31项正式Game Bar协议/透明度/几何检查。连同16项核心、54项桌面诊断均通过。
+- [GitHub构建](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40319354035)通过，组件包版本升至0.3.0.1。用户明确授权新证书后已升级本机，重新固定后确认“能看到了”；导出的准星图包含224个非透明像素。
+- 已发布 [v0.3.0-preview.2](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.2) 并核验5个附件摘要。编辑器ZIP SHA256：`1db01bbc6c0da405859d4fb1476a989105d87eac4f4ecdda58d6e913eeda40d0`；Game Bar ZIP SHA256：`8d5f8a88b6eb6c3c05ad786c07596bb1ed34929bfc49c48b12ac84b218081d2e`；公开测试证书指纹：`79006C4D4F565B0A0D1AC855E5C29DF98E0AD83A`。
+- CS游戏内兼容性仍待验证，Game Bar预览版没有代替v0.2.1正式桌面版。
+
 - `README.md`：使用说明、快捷键、参数含义和构建方法。
 - `docs/testing.md`：验证结果与尚未覆盖的场景。
 - `scripts/build.ps1 -Portable`：构建、核心检查、自包含打包。
 - `scripts/test-desktop.ps1`：独立配置下的桌面诊断。
 - `.github/workflows/build.yml`：Windows 构建与便携包工作流。
-- 稳定分支 / 远程默认分支：`codex/reticle-mvp`，最新稳定标签 `v0.2.1`。全屏预览分支：`codex/gamebar-fullscreen`，标签 `v0.3.0-preview.1`。
+- 稳定分支 / 远程默认分支：`codex/reticle-mvp`，最新稳定标签 `v0.2.1`。全屏预览分支：`codex/gamebar-fullscreen`，最新预览标签 `v0.3.0-preview.2`。
 - Git 提交身份使用仓库级命令参数 `Codex <codex@localhost>`，未改动用户的全局 Git 身份配置。
 
 ## 待确认 / 待办

@@ -1,5 +1,18 @@
 # 验证记录
 
+## v0.3.0-preview.2 · Game Bar 准星几乎不可见
+
+2026-10-26，Windows 11 25H2 / Game Bar 7.326.8061.0。
+
+- 用户截图确认组件已固定、鼠标穿透开启、桌面同步连接，但没有可见准星；读取实时配置确认 enabled=true、不透明度100、偏移0、心跳新鲜。
+- 修正了宿主透明度的单位。微软实际 C# 示例将 RequestedOpacity 直接赋给 XAML Opacity；本机新诊断确认前台返回1、固定模式返回0.85。旧公式额外除以100，分别只绘制1% / 0.85%不透明度；修正后分别为100% / 85%。
+- 16项核心检查、31项新增正式Game Bar检查（真实WinRT解析、透明度、几何和DPI）、54项桌面诊断通过，Release构建0警告/0错误。[Game Bar构建及签名](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40319354035)与桌面构建均成功。
+- 用户授权新测试证书后，组件由0.3.0.0升级至0.3.0.1。重新固定后用户明确确认“能看到了”。本机状态为PinnedOnly、pinned=true、clickThroughEnabled=true、canvas=400×400、effectiveOpacity=0.85、8个图元、有效心跳。
+- 通过RenderTargetBitmap仅导出组件自身准星，得到34×34内容图像、224个非透明像素。已查看图像，确认实际绘制出绿色十字；未截取游戏或其他应用。原始报告与PNG保存在 `artifacts/preview2-runtime/`。
+- 已发布 [preview.2 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.2)，五个远端附件摘要均与本地一致，最新正式版仍为v0.2.1。
+
+本次已验证本机组件显示，**CS游戏内全屏、禁用全屏优化、分辨率切换与混合DPI多屏仍需对应环境实测**。
+
 ## v0.3.0-preview.1 · Game Bar 全屏组件
 
 2026-10-26，Windows 11 25H2 / 单屏 1920 × 1080。该版本保持实验状态，目标是用户允许 Windows 全屏优化、CS 菜单继续选择“全屏”的配置。
