@@ -9,7 +9,7 @@
         <StackPanel><TextBlock Text="RETICLE STUDIO" FontSize="22" FontWeight="Bold"/><TextBlock Text="让每一次瞄准，都有自己的准星。" Foreground="#9AA9BD" FontSize="12" Margin="0,4,0,0"/></StackPanel>
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-        <Border Background="#202B2A" CornerRadius="5" Padding="9,5" Margin="0,0,12,0"><TextBlock Text="WINDOWS  /  v0.2.0" Foreground="#9DC4B6" FontSize="10"/></Border>
+        <Border Background="#202B2A" CornerRadius="5" Padding="9,5" Margin="0,0,12,0"><TextBlock Text="WINDOWS  /  v0.2.1" Foreground="#9DC4B6" FontSize="10"/></Border>
         <Button Content="收起到托盘" Click="MinimizeToTray_Click" Padding="12,8"/>
       </StackPanel>
     </Grid>
@@ -40,7 +40,8 @@
           <StackPanel>
             <Grid Margin="0,0,0,15"><StackPanel><TextBlock x:Name="OverlayStatus" Text="桌面准星已关闭" FontWeight="SemiBold"/><TextBlock Text="Ctrl + Alt + H  随时显示 / 隐藏" Foreground="#9AA9BD" FontSize="11" Margin="0,6,0,0"/></StackPanel><Ellipse x:Name="StatusDot" Fill="#657082" Width="8" Height="8" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,0,0"/></Grid>
             <Button x:Name="ToggleButton" Content="开启桌面准星" Click="ToggleOverlay_Click" Background="#67E8B0" BorderBrush="#67E8B0" Foreground="#10261D" FontWeight="Bold" Padding="14,13"/>
-            <TextBlock Text="建议使用游戏的无边框窗口模式。" Foreground="#9AA9BD" FontSize="11" Margin="0,12,0,0" TextAlignment="Center"/>
+            <TextBlock Text="CS 显示模式请选择「全屏窗口化 / 无边框」。" Foreground="#9DC4B6" FontSize="11" Margin="0,12,0,0" TextAlignment="Center" TextWrapping="Wrap"/>
+            <TextBlock Text="开启准星后自动恢复置顶；不支持独占全屏。" Foreground="#9AA9BD" FontSize="11" Margin="0,4,0,0" TextAlignment="Center" TextWrapping="Wrap"/>
           </StackPanel>
         </Border>
       </Grid>

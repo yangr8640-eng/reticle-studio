@@ -10,6 +10,8 @@ public partial class App : Application
         base.OnStartup(e);
         if (e.Args.Contains("--diagnostics"))
         {
+            // Closing a diagnostic window must not terminate the run or mask its exit code.
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
             string path = e.Args.SkipWhile(x => x != "--diagnostics").Skip(1).FirstOrDefault() ?? "diagnostics.json";
             int result = Diagnostics.Run(path);
             Shutdown(result);

@@ -39,6 +39,7 @@ internal static class Diagnostics
             Check("hidden", !NativeMethods.IsWindowVisible(overlay.Handle));
             overlay.SetVisible(true);
             Check("shownAgain", NativeMethods.IsWindowVisible(overlay.Handle));
+            CheckOverlayRecovery(overlay, Check);
             bool registered = NativeMethods.RegisterHotKey(overlay.Handle, 99, 0x4003, 0x48);
             results["hotkeyAvailable"] = registered;
             if (registered) NativeMethods.UnregisterHotKey(overlay.Handle, 99);
@@ -154,6 +155,74 @@ internal static class Diagnostics
             results[name] = pass;
             if (!pass) throw new InvalidOperationException("Diagnostic failed: " + name);
         }
+    }
+
+    private static void CheckOverlayRecovery(OverlayWindow overlay, Action<string, bool> check)
+    {
+        // A real borderless, topmost HWND reproduces the desktop z-order failure.
+        // This is not an exclusive-fullscreen DirectX or CS compatibility test.
+        var game = new Window
+        {
+            Title = "Reticle diagnostics · fullscreen window", WindowStyle = WindowStyle.None,
+            ResizeMode = ResizeMode.NoResize, Background = Brushes.Black,
+            ShowInTaskbar = false, ShowActivated = false, Topmost = true
+        };
+        try
+        {
+            game.Show();
+            IntPtr gameHandle = new WindowInteropHelper(game).Handle;
+            var bounds = overlay.SelectedScreen.Bounds;
+            check("fullscreenTestWindowPositioned", NativeMethods.SetWindowPos(gameHandle, new IntPtr(-1),
+                bounds.Left, bounds.Top, bounds.Width, bounds.Height, NativeMethods.NoActivatePosition));
+            check("fullscreenWindowInitiallyCoversOverlay", IsAbove(gameHandle, overlay.Handle));
+            IntPtr foreground = NativeMethods.GetForegroundWindow();
+            check("overlayRecoversAboveFullscreenWindow", WaitUntil(() => IsAbove(overlay.Handle, gameHandle)));
+            check("fullscreenRecoveryDoesNotStealFocus", NativeMethods.GetForegroundWindow() == foreground);
+
+            // Losing the TOPMOST flag and having the HWND moved/resized must also recover.
+            NativeMethods.GetWindowRect(overlay.Handle, out var expected);
+            check("overlayDisplacedForTest", NativeMethods.SetWindowPos(overlay.Handle, new IntPtr(-2),
+                expected.Left + 81, expected.Top + 49, 240, 240, NativeMethods.NoActivatePosition));
+            check("overlayRecoversPositionAndTopmost", WaitUntil(() =>
+            {
+                NativeMethods.GetWindowRect(overlay.Handle, out var current);
+                return current.Equals(expected) && IsAbove(overlay.Handle, gameHandle)
+                    && (NativeMethods.GetWindowLong(overlay.Handle, NativeMethods.GwlExStyle) & 8) != 0;
+            }));
+            check("positionRecoveryDoesNotStealFocus", NativeMethods.GetForegroundWindow() == foreground);
+
+            overlay.SetVisible(false);
+            check("hiddenOverlayStaysHidden", !WaitUntil(() => NativeMethods.IsWindowVisible(overlay.Handle), 1100));
+            overlay.SetVisible(true);
+            NativeMethods.SetWindowPos(gameHandle, new IntPtr(-1), bounds.Left, bounds.Top,
+                bounds.Width, bounds.Height, NativeMethods.NoActivatePosition);
+            check("overlayRecoveryRestartsAfterShow", WaitUntil(() => IsAbove(overlay.Handle, gameHandle)));
+        }
+        finally { game.Close(); }
+
+        static bool IsAbove(IntPtr upper, IntPtr lower)
+        {
+            // GW_HWNDPREV walks towards the top; cap the walk if other apps reorder windows.
+            var current = lower;
+            for (int i = 0; i < 4096 && current != IntPtr.Zero; i++)
+            {
+                current = NativeMethods.GetWindow(current, 3);
+                if (current == upper) return true;
+            }
+            return false;
+        }
+    }
+
+    private static bool WaitUntil(Func<bool> condition, int timeoutMilliseconds = 3000)
+    {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        while (watch.ElapsedMilliseconds < timeoutMilliseconds)
+        {
+            Pump();
+            if (condition()) return true;
+            Thread.Sleep(10);
+        }
+        return condition();
     }
 
     private static void Pump() => Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
