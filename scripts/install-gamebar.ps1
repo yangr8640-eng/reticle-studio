@@ -215,8 +215,24 @@ if ($trustedSignature.Status.ToString() -ne 'Valid') { throw "Trusted package si
 if (-not (Get-AppxPackage -Name Microsoft.XboxGamingOverlay)) { throw 'Install Xbox Game Bar from Microsoft Store for this user, then retry.' }
 $installed = Get-AppxPackage -Name ReticleStudio.GameBar
 if ($installed -and [Version]$installed.Version -gt [Version]$bundle.version) { throw 'A newer Game Bar package is already installed; downgrades are not performed.' }
+$missingDependencies = @()
+foreach ($required in @($appManifest.SelectNodes('/a:Package/a:Dependencies/a:PackageDependency', $namespaceManager))) {
+    $available = @(Get-AppxPackage -Name $required.Name -PackageTypeFilter Framework | Where-Object {
+        $_.Publisher -eq $required.Publisher -and [Version]$_.Version -ge [Version]$required.MinVersion -and
+        $_.Architecture.ToString() -in @('X64','Neutral')
+    })
+    if ($available.Count) {
+        Write-Host "Using installed framework: $($required.Name)"
+        continue
+    }
+    foreach ($relativePath in @($bundle.dependencies)) {
+        $dependencyPath = $filesByName[$relativePath]
+        $dependencyManifest = Read-AppxManifest $dependencyPath
+        if ($dependencyManifest.Package.Identity.Name -eq $required.Name) { $missingDependencies += $dependencyPath }
+    }
+}
 $parameters = @{ Path = $appxPath; ErrorAction = 'Stop' }
-if ($dependencyPaths.Count) { $parameters.DependencyPath = [string[]]$dependencyPaths }
+if ($missingDependencies.Count) { $parameters.DependencyPath = [string[]]$missingDependencies }
 Add-AppxPackage @parameters
 $installed = Get-AppxPackage -Name ReticleStudio.GameBar
 if (-not $installed -or $installed.Version -ne $bundle.version) { throw 'Installation did not produce the expected package version.' }
