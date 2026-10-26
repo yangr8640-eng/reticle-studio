@@ -31,6 +31,7 @@ Check("Untrusted settings clamp numeric inputs", () =>
 Check("Invalid colors cannot reach renderer", () =>
 {
     var s = new CrosshairSettings(); s.Color = "red"; Assert(s.Color == "#67E8B0"); s.Color = "#abcdef"; Assert(s.Color == "#ABCDEF");
+    s.Color = "#FF0000\n"; Assert(s.Color == "#ABCDEF" && !CrosshairSettings.IsColor("#FF0000\n"));
 });
 Check("Presets preserve selected monitor and position", () =>
 {
@@ -60,10 +61,78 @@ Check("Configuration round trip and atomic replacement", () =>
 });
 Check("Import rejects unrelated or invalid documents", () =>
 {
-    foreach (string json in new[] { "null", "[]", "{}", "{\"Shape\":\"Cross\",\"Color\":\"invalid\"}" })
+    foreach (string json in new[] { "null", "[]", "{}", "{\"Shape\":\"Cross\",\"Color\":\"invalid\"}", "{\"Shape\":\"Cross\",\"Color\":\"#FF0000\\n\"}" })
     {
         bool rejected = false; try { SettingsStore.Parse(json); } catch (Exception e) when (e is InvalidDataException or JsonException) { rejected = true; }
         Assert(rejected);
     }
+});
+Check("HEX primaries and secondaries map to HSV hue sectors", () =>
+{
+    var colors = new[] { "#FF0000", "#FFFF00", "#00FF00", "#00FFFF", "#0000FF", "#FF00FF" };
+    for (int i = 0; i < colors.Length; i++)
+    {
+        var hsv = ColorMath.HexToHsv(colors[i]);
+        Assert(Near(hsv.Hue, i * 60) && Near(hsv.Saturation, 1) && Near(hsv.Value, 1));
+        Assert(ColorMath.HsvToHex(i * 60, 1, 1) == colors[i]);
+    }
+});
+Check("HSV saturation and brightness produce expected RGB values", () =>
+{
+    Assert(ColorMath.HsvToHex(0, 0.5, 1) == "#FF8080");
+    Assert(ColorMath.HsvToHex(120, 1, 0.5) == "#008000");
+    Assert(ColorMath.HsvToHex(240, 0.5, 0.5) == "#404080");
+});
+Check("Grayscale and black do not divide by zero", () =>
+{
+    foreach (string hex in new[] { "#000000", "#808080", "#FFFFFF" })
+    {
+        var hsv = ColorMath.HexToHsv(hex);
+        Assert(hsv.Hue == 0 && hsv.Saturation == 0 && double.IsFinite(hsv.Value));
+        Assert(ColorMath.HsvToHex(217, 0, hsv.Value) == hex);
+    }
+    Assert(ColorMath.HsvToHex(83, 1, 0) == "#000000");
+});
+Check("Hue wraps and saturation/value clamp at palette boundaries", () =>
+{
+    Assert(ColorMath.HsvToHex(360, 1, 1) == "#FF0000");
+    Assert(ColorMath.HsvToHex(720, 1, 1) == "#FF0000");
+    Assert(ColorMath.HsvToHex(-120, 1, 1) == "#0000FF");
+    Assert(ColorMath.HsvToHex(120, 2, 2) == "#00FF00");
+    Assert(ColorMath.HsvToHex(120, -1, 1) == "#FFFFFF");
+    Assert(ColorMath.HsvToHex(120, 1, -1) == "#000000");
+});
+Check("HSV conversion preserves selected 24-bit colors", () =>
+{
+    foreach (string hex in new[] { "#67e8b0", "#71C7FF", "#FFC66D", "#FF7AA2", "#010203", "#FEFDFC", "#123456", "#A942E7" })
+    {
+        var hsv = ColorMath.HexToHsv(hex);
+        Assert(ColorMath.HsvToHex(hsv.Hue, hsv.Saturation, hsv.Value) == hex.ToUpperInvariant());
+    }
+    for (int r = 0; r <= 255; r += 17)
+        for (int g = 0; g <= 255; g += 17)
+            for (int b = 0; b <= 255; b += 17)
+            {
+                string hex = $"#{r:X2}{g:X2}{b:X2}";
+                var hsv = ColorMath.HexToHsv(hex);
+                Assert(ColorMath.HsvToHex(hsv.Hue, hsv.Saturation, hsv.Value) == hex);
+            }
+});
+Check("Color conversion rejects malformed HEX and nonfinite HSV", () =>
+{
+    foreach (string? hex in new string?[] { null, "", "red", "FF0000", "#FFF", "#FF000000", "#GG0000", "#FF0000\n", "#  FF00" })
+    {
+        bool rejected = false;
+        try { ColorMath.HexToHsv(hex!); } catch (ArgumentException) { rejected = true; }
+        Assert(rejected);
+    }
+    foreach (double invalid in new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity })
+        foreach (int channel in new[] { 0, 1, 2 })
+        {
+            bool rejected = false;
+            try { ColorMath.HsvToHex(channel == 0 ? invalid : 0, channel == 1 ? invalid : 1, channel == 2 ? invalid : 1); }
+            catch (ArgumentOutOfRangeException) { rejected = true; }
+            Assert(rejected);
+        }
 });
 Console.WriteLine($"All {passed} checks passed.");

@@ -33,7 +33,7 @@ public sealed class CrosshairSettings : INotifyPropertyChanged
     public string Monitor { get => monitor; set => Set(ref monitor, value ?? ""); }
     [JsonIgnore] public string ShapeLabel => Shape switch { CrosshairShape.Diagonal => "斜十字", CrosshairShape.Circle => "圆形", _ => "十字" };
 
-    public static bool IsColor(string? value) => value is not null && Regex.IsMatch(value, "^#[0-9a-fA-F]{6}$", RegexOptions.CultureInvariant);
+    public static bool IsColor(string? value) => value is { Length: 7 } && Regex.IsMatch(value, "^#[0-9a-fA-F]{6}$", RegexOptions.CultureInvariant);
     private static double Clamp(double value, double min, double max, double fallback) => double.IsFinite(value) ? Math.Round(Math.Clamp(value, min, max), 1) : fallback;
     private void Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
     {

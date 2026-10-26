@@ -1,0 +1,35 @@
+<UserControl x:Class="Reticle.App.ColorPalette" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Border Background="#111923" BorderBrush="#344052" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,8,0,0">
+    <StackPanel>
+      <Grid Margin="0,0,0,10">
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <Border x:Name="ColorChip" Width="24" Height="24" CornerRadius="5" BorderBrush="#8B99AD" BorderThickness="1" Margin="0,0,9,0"/>
+          <TextBlock x:Name="ColorLabel" FontFamily="Consolas" FontSize="13" VerticalAlignment="Center"/>
+        </StackPanel>
+        <TextBlock Text="拖动选色 · 实时生效" Foreground="#9AA9BD" FontSize="10" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+      </Grid>
+      <Border BorderThickness="1" CornerRadius="2" Padding="5">
+        <Border.Style><Style TargetType="Border"><Setter Property="BorderBrush" Value="#344052"/><Style.Triggers><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter Property="BorderBrush" Value="#67E8B0"/></Trigger></Style.Triggers></Style></Border.Style>
+        <Grid x:Name="ColorSurface" Height="145" Focusable="True" Cursor="Cross" Background="Red" AutomationProperties.Name="颜色区域" AutomationProperties.HelpText="左右键调整饱和度，上下键调整明度；按住 Shift 加速。" ToolTip="左右键调饱和度，上下键调明度；Shift 加速"
+              MouseLeftButtonDown="Surface_MouseDown" MouseMove="Surface_MouseMove" MouseLeftButtonUp="Surface_MouseUp" KeyDown="Surface_KeyDown" SizeChanged="Surface_SizeChanged">
+          <Rectangle IsHitTestVisible="False"><Rectangle.Fill><LinearGradientBrush StartPoint="0,0" EndPoint="1,0" ColorInterpolationMode="SRgbLinearInterpolation"><GradientStop Color="#FFFFFFFF" Offset="0"/><GradientStop Color="#00FFFFFF" Offset="1"/></LinearGradientBrush></Rectangle.Fill></Rectangle>
+          <Rectangle IsHitTestVisible="False"><Rectangle.Fill><LinearGradientBrush StartPoint="0,0" EndPoint="0,1" ColorInterpolationMode="SRgbLinearInterpolation"><GradientStop Color="#00000000" Offset="0"/><GradientStop Color="#FF000000" Offset="1"/></LinearGradientBrush></Rectangle.Fill></Rectangle>
+          <Canvas IsHitTestVisible="False"><Grid x:Name="SelectionMarker" Width="13" Height="13"><Ellipse Stroke="Black" StrokeThickness="3"/><Ellipse Stroke="White" StrokeThickness="1.5" Margin="1"/></Grid></Canvas>
+        </Grid>
+      </Border>
+      <Grid Margin="0,10,0,0"><TextBlock Text="色相" FontSize="11" Foreground="#9AA9BD"/><TextBlock x:Name="HueLabel" HorizontalAlignment="Right" FontSize="11" Foreground="#9AA9BD"/></Grid>
+      <Slider x:Name="HueSlider" Minimum="0" Maximum="360" TickFrequency="1" SmallChange="1" LargeChange="15" ValueChanged="Hue_Changed" AutomationProperties.Name="调色盘色相" Margin="0,6,0,8" Height="20">
+        <Slider.Template><ControlTemplate TargetType="Slider"><Grid Margin="6,0">
+          <Border Height="10" CornerRadius="5"><Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,0" ColorInterpolationMode="SRgbLinearInterpolation">
+            <GradientStop Color="#FF0000" Offset="0"/><GradientStop Color="#FFFF00" Offset="0.1666667"/><GradientStop Color="#00FF00" Offset="0.3333333"/><GradientStop Color="#00FFFF" Offset="0.5"/><GradientStop Color="#0000FF" Offset="0.6666667"/><GradientStop Color="#FF00FF" Offset="0.8333333"/><GradientStop Color="#FF0000" Offset="1"/>
+          </LinearGradientBrush></Border.Background></Border>
+          <Track x:Name="PART_Track"><Track.DecreaseRepeatButton><RepeatButton Command="Slider.DecreaseLarge" Background="Transparent" Style="{StaticResource SliderRepeat}"/></Track.DecreaseRepeatButton><Track.IncreaseRepeatButton><RepeatButton Command="Slider.IncreaseLarge" Background="Transparent" Style="{StaticResource SliderRepeat}"/></Track.IncreaseRepeatButton><Track.Thumb><Thumb Width="12" Height="18"><Thumb.Template><ControlTemplate TargetType="Thumb"><Border CornerRadius="4" BorderBrush="#111923" BorderThickness="1"><Border CornerRadius="3" BorderBrush="White" BorderThickness="2" Background="#30000000"/></Border></ControlTemplate></Thumb.Template></Thumb></Track.Thumb></Track>
+        </Grid></ControlTemplate></Slider.Template>
+      </Slider>
+      <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions>
+        <StackPanel><Grid><TextBlock Text="饱和度" FontSize="11" Foreground="#9AA9BD"/><TextBlock x:Name="SaturationLabel" HorizontalAlignment="Right" FontSize="11" Foreground="#9AA9BD"/></Grid><Slider x:Name="SaturationSlider" Minimum="0" Maximum="100" SmallChange="1" LargeChange="10" ValueChanged="Saturation_Changed" AutomationProperties.Name="调色盘饱和度"/></StackPanel>
+        <StackPanel Grid.Column="2"><Grid><TextBlock Text="明度" FontSize="11" Foreground="#9AA9BD"/><TextBlock x:Name="BrightnessLabel" HorizontalAlignment="Right" FontSize="11" Foreground="#9AA9BD"/></Grid><Slider x:Name="BrightnessSlider" Minimum="0" Maximum="100" SmallChange="1" LargeChange="10" ValueChanged="Brightness_Changed" AutomationProperties.Name="调色盘明度"/></StackPanel>
+      </Grid>
+    </StackPanel>
+  </Border>
+</UserControl>

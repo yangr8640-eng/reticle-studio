@@ -124,6 +124,8 @@ public partial class MainWindow : Window
     private void Preset_Click(object sender, RoutedEventArgs e) => settings.Apply(CrosshairSettings.Preset((string)((Button)sender).Tag), false);
     private void Reset_Click(object sender, RoutedEventArgs e) => settings.Apply(new(), false);
     private void Color_Click(object sender, RoutedEventArgs e) => settings.Color = (string)((Button)sender).Tag;
+    private void Palette_Expanded(object sender, RoutedEventArgs e) =>
+        Dispatcher.BeginInvoke(() => { if (PaletteExpander.IsExpanded) PaletteExpander.BringIntoView(); }, DispatcherPriority.Loaded);
     private void Center_Click(object sender, RoutedEventArgs e) { settings.OffsetX = 0; settings.OffsetY = 0; }
     private void ColorInput_Changed(object sender, TextChangedEventArgs e)
     {

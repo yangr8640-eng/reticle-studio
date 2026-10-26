@@ -9,7 +9,7 @@
         <StackPanel><TextBlock Text="RETICLE STUDIO" FontSize="22" FontWeight="Bold"/><TextBlock Text="让每一次瞄准，都有自己的准星。" Foreground="#9AA9BD" FontSize="12" Margin="0,4,0,0"/></StackPanel>
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-        <Border Background="#202B2A" CornerRadius="5" Padding="9,5" Margin="0,0,12,0"><TextBlock Text="WINDOWS  /  v0.1.0" Foreground="#9DC4B6" FontSize="10"/></Border>
+        <Border Background="#202B2A" CornerRadius="5" Padding="9,5" Margin="0,0,12,0"><TextBlock Text="WINDOWS  /  v0.2.0" Foreground="#9DC4B6" FontSize="10"/></Border>
         <Button Content="收起到托盘" Click="MinimizeToTray_Click" Padding="12,8"/>
       </StackPanel>
     </Grid>
@@ -67,6 +67,9 @@
                 <TextBox Grid.Column="1" x:Name="ColorInput" MaxLength="7" TextChanged="ColorInput_Changed" AutomationProperties.Name="十六进制颜色" FontFamily="Consolas" FontSize="14" VerticalContentAlignment="Center"/>
               </Grid>
               <TextBlock x:Name="ColorError" Text="颜色格式：#RRGGBB" Foreground="#FFACAC" FontSize="10" Visibility="Collapsed" Margin="0,0,0,6"/>
+              <Expander x:Name="PaletteExpander" Header="调色盘 · 自由选色" Expanded="Palette_Expanded" Foreground="#DAE3EF" Margin="0,2,0,12">
+                <local:ColorPalette x:Name="Palette" SelectedColor="{Binding Color, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+              </Expander>
               <Grid><TextBlock Text="不透明度"/><TextBlock Text="{Binding Opacity, StringFormat={}{0:0}%}" HorizontalAlignment="Right" Foreground="#67E8B0"/></Grid><Slider Minimum="0" Maximum="100" Value="{Binding Opacity}" AutomationProperties.Name="不透明度"/>
               <CheckBox Content="显示中心点" IsChecked="{Binding CenterDot}"/>
               <StackPanel IsEnabled="{Binding CenterDot}"><Grid><TextBlock Text="中心点直径" Foreground="#9AA9BD"/><TextBlock Text="{Binding DotSize, StringFormat={}{0:0.#} px}" HorizontalAlignment="Right" Foreground="#9AA9BD"/></Grid><Slider Minimum="1" Maximum="20" Value="{Binding DotSize}" AutomationProperties.Name="中心点直径"/></StackPanel>
