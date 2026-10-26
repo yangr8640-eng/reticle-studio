@@ -135,4 +135,29 @@ Check("Color conversion rejects malformed HEX and nonfinite HSV", () =>
             Assert(rejected);
         }
 });
+Check("Game Bar state preserves settings, heartbeat and explicit disabled state", () =>
+{
+    string directory = Path.Combine(Path.GetTempPath(), "reticle-gamebar-tests-" + Guid.NewGuid());
+    string path = Path.Combine(directory, "overlay-state.json");
+    try
+    {
+        var store = new GameBarStateStore(path);
+        var settings = new CrosshairSettings { Shape = CrosshairShape.Diagonal, Color = "#123456", OffsetX = -123, Opacity = 41 };
+        var now = DateTimeOffset.Parse("2026-10-26T12:34:56Z");
+        store.Save(settings, true, now);
+        using (var doc = JsonDocument.Parse(File.ReadAllText(path)))
+        {
+            var root = doc.RootElement;
+            Assert(root.GetProperty("schemaVersion").GetInt32() == 1 && root.GetProperty("enabled").GetBoolean());
+            Assert(root.GetProperty("updatedAtUtc").GetDateTimeOffset() == now);
+            var restored = SettingsStore.Parse(root.GetProperty("settings").GetRawText());
+            Assert(restored.Shape == settings.Shape && restored.Color == settings.Color && restored.OffsetX == -123 && restored.Opacity == 41);
+        }
+        store.Save(settings, false, now.AddSeconds(3));
+        using var updated = JsonDocument.Parse(File.ReadAllText(path));
+        Assert(!updated.RootElement.GetProperty("enabled").GetBoolean());
+        Assert(!File.Exists(path + ".tmp"));
+    }
+    finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+});
 Console.WriteLine($"All {passed} checks passed.");

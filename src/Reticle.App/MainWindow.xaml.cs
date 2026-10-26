@@ -17,6 +17,10 @@ public partial class MainWindow : Window
     private readonly SettingsStore store;
     private readonly OverlayWindow overlay;
     private readonly DispatcherTimer saveTimer = new() { Interval = TimeSpan.FromMilliseconds(350) };
+    private readonly GameBarBridge gameBar = new();
+    private readonly DispatcherTimer gameBarTimer = new() { Interval = TimeSpan.FromSeconds(3) };
+    private readonly DispatcherTimer gameBarSyncTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
+    private bool gameBarMode;
     private readonly Forms.NotifyIcon tray;
     private readonly System.Drawing.Icon trayIcon;
     private IntPtr handle;
@@ -36,6 +40,8 @@ public partial class MainWindow : Window
         PopulateMonitors();
         settings.PropertyChanged += Settings_Changed;
         saveTimer.Tick += (_, _) => Save();
+        gameBarTimer.Tick += (_, _) => SendGameBarState();
+        gameBarSyncTimer.Tick += (_, _) => { gameBarSyncTimer.Stop(); SendGameBarState(); };
         if (warning is not null) { SaveStatus.Text = warning; allowSave = !warning.Contains("备份失败"); }
 
         trayIcon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? (System.Drawing.Icon)System.Drawing.SystemIcons.Application.Clone();
@@ -60,6 +66,8 @@ public partial class MainWindow : Window
         Closed += (_, _) =>
         {
             ready = false; saveTimer.Stop(); Save();
+            gameBarTimer.Stop(); gameBarSyncTimer.Stop();
+            if (gameBarMode && overlayEnabled) gameBar.TrySend(settings, false, out _);
             SystemEvents.DisplaySettingsChanged -= DisplayChanged;
             settings.PropertyChanged -= Settings_Changed;
             NativeMethods.UnregisterHotKey(handle, 1); NativeMethods.UnregisterHotKey(handle, 2);
@@ -79,6 +87,7 @@ public partial class MainWindow : Window
         if (e.PropertyName == nameof(CrosshairSettings.Color) && ColorInput.Text != settings.Color) ColorInput.Text = settings.Color;
         if (e.PropertyName == nameof(CrosshairSettings.Shape)) UpdateShape();
         if (overlayEnabled && e.PropertyName is nameof(CrosshairSettings.Monitor) or nameof(CrosshairSettings.OffsetX) or nameof(CrosshairSettings.OffsetY)) overlay.Position();
+        if (gameBarMode && overlayEnabled) { gameBarSyncTimer.Stop(); gameBarSyncTimer.Start(); }
         if (allowSave) { SaveStatus.Text = "正在保存…"; saveTimer.Stop(); saveTimer.Start(); }
     }
     private void Save()
@@ -110,13 +119,59 @@ public partial class MainWindow : Window
     }
     private void ToggleOverlay()
     {
+        if (gameBarMode && !overlayEnabled && !gameBar.TryConnect(out var message))
+        {
+            OverlayStatus.Text = message;
+            return;
+        }
         overlayEnabled = !overlayEnabled;
-        overlay.SetVisible(overlayEnabled);
-        ToggleButton.Content = overlayEnabled ? "关闭桌面准星" : "开启桌面准星";
-        OverlayStatus.Text = overlayEnabled ? "桌面准星已开启" : "桌面准星已关闭";
+        UpdateOverlayControls();
+        if (gameBarMode)
+        {
+            SendGameBarState();
+            if (overlayEnabled) gameBarTimer.Start(); else gameBarTimer.Stop();
+        }
+        else overlay.SetVisible(overlayEnabled);
+    }
+    private void UpdateOverlayControls()
+    {
+        string mode = gameBarMode ? "全屏组件" : "桌面准星";
+        ToggleButton.Content = (overlayEnabled ? "关闭" : "开启") + mode;
+        OverlayStatus.Text = gameBarMode && overlayEnabled ? "已发送到组件，请在 Game Bar 中固定" : mode + (overlayEnabled ? "已开启" : "已关闭");
         StatusDot.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(overlayEnabled ? "#67E8B0" : "#657082"));
         tray.Text = overlayEnabled ? "Reticle Studio · 准星已开启" : "Reticle Studio · 准星已关闭";
     }
+    private void SendGameBarState()
+    {
+        if (!gameBarMode) return;
+        if (!gameBar.TrySend(settings, overlayEnabled, out string? error))
+        {
+            overlayEnabled = false; gameBarTimer.Stop(); gameBarSyncTimer.Stop();
+            UpdateOverlayControls();
+            OverlayStatus.Text = error;
+        }
+    }
+    private void OverlayMode_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!ready) return;
+        if (overlayEnabled) ToggleOverlay();
+        gameBarTimer.Stop(); gameBarSyncTimer.Stop();
+        gameBarMode = OverlayModeBox.SelectedIndex == 1;
+        MonitorBox.IsEnabled = !gameBarMode;
+        MonitorBox.ToolTip = gameBarMode ? "全屏组件所在显示器请在 Game Bar 中调整。" : null;
+        ModeHint.Text = gameBarMode
+            ? "保留 CS 全屏；需安装并固定 Game Bar 组件。"
+            : "桌面模式适用于全屏窗口化 / 无边框。";
+        UpdateOverlayControls();
+    }
+    private void GameBarHelp_Click(object sender, RoutedEventArgs e) => MessageBox.Show(this,
+        "全屏组件为实验支持，需要另行安装 Reticle Game Bar 预览包。\n\n" +
+        "1. 保留 CS 的全屏显示模式。按 Win+G，确认 Game Bar 能显示在游戏画面上。\n" +
+        "2. 在 Game Bar 的小组件菜单打开 Reticle 准星，点击固定，并启用鼠标穿透。\n" +
+        "3. 在本工具选择「全屏 · Game Bar（实验）」，点击开启。外观与 Ctrl+Alt+H 开关会同步。\n" +
+        "4. 在组件中点居中；多屏位置请在 Game Bar 中调整。\n\n" +
+        "需要 Windows / Game Bar 对当前游戏的覆盖支持；CS 游戏内兼容性尚待实测。组件不会修改游戏的显示模式。",
+        "全屏准星 · Game Bar", MessageBoxButton.OK, MessageBoxImage.Information);
     private void Restore() { Show(); WindowState = WindowState.Normal; Activate(); }
     private void ToggleOverlay_Click(object sender, RoutedEventArgs e) => ToggleOverlay();
     private void MinimizeToTray_Click(object sender, RoutedEventArgs e) { Save(); Hide(); }

@@ -1,0 +1,18 @@
+<Page x:Class="Reticle.GameBar.MainPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Background="#10151E" RequestedTheme="Dark">
+  <ScrollViewer>
+    <StackPanel Padding="32" MaxWidth="620" HorizontalAlignment="Center" Spacing="16">
+      <TextBlock Text="Reticle Studio · 全屏准星组件" FontSize="25" FontWeight="SemiBold" TextWrapping="Wrap"/>
+      <TextBlock Text="通过 Xbox Game Bar 显示准星。游戏可以保留「全屏」选项；是否可见仍取决于 Windows、游戏和显卡的显示方式。" TextWrapping="Wrap"/>
+      <TextBlock Text="1. 进入游戏后按 Win + G，打开小组件菜单，选择「Reticle Studio 准星」。&#10;2. 点击组件标题栏的图钉，将准星固定在屏幕上。&#10;3. 在 Game Bar 中开启鼠标穿透，再按 Win + G 返回游戏。&#10;4. 需要时重新打开 Game Bar，点击组件里的「重新居中」。" TextWrapping="Wrap" LineHeight="27"/>
+      <TextBlock Text="外观设置" FontSize="19" FontWeight="SemiBold" Margin="0,8,0,0"/>
+      <TextBlock Text="在 Reticle 桌面编辑器中启用 Game Bar 模式后可实时同步。也可以导入以前导出的准星 JSON，脱离桌面编辑器独立使用。" TextWrapping="Wrap"/>
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button x:Name="ImportButton" Content="导入准星 JSON" Click="Import_Click"/>
+        <Button Content="使用桌面同步" Click="Sync_Click"/>
+      </StackPanel>
+      <TextBlock x:Name="ImportStatus" TextWrapping="Wrap" Foreground="#67E8B0"/>
+      <TextBlock Text="第一次未导入、未同步时显示默认准星。桌面同步模式下，编辑器停止发送超过 15 秒后准星隐藏。独立导入模式持续显示，直到关闭组件。" TextWrapping="Wrap" Foreground="#A8B6C7"/>
+      <TextBlock Text="实验支持：真正独占全屏或不支持 Game Bar 的显示环境仍可能无法覆盖。请在目标机器的 CS 全屏中实际确认；桌面测试不能替代游戏内测试。" TextWrapping="Wrap" Foreground="#D9B778" Margin="0,8,0,0"/>
+    </StackPanel>
+  </ScrollViewer>
+</Page>

@@ -6,4 +6,8 @@ artifacts/
 *.user
 *.suo
 *.log
+**/AppPackages/
+**/BundleArtifacts/
+*.pfx
+*.p12
 .DS_Store

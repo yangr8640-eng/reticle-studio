@@ -1,0 +1,47 @@
+name: Game Bar preview
+
+on:
+  push:
+    paths:
+      - 'src/Reticle.GameBar/**'
+      - 'src/Reticle.App/**'
+      - 'src/Reticle.Core/**'
+      - 'tests/**'
+      - 'Directory.Build.props'
+      - 'scripts/build.ps1'
+      - 'scripts/build-gamebar.ps1'
+      - 'scripts/install-gamebar.ps1'
+      - 'docs/fullscreen-gamebar.md'
+      - '.github/workflows/gamebar.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v2
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build, check and package desktop editor
+        shell: pwsh
+        run: ./scripts/build.ps1 -Portable
+      - name: Build and verify signed preview package
+        shell: pwsh
+        run: ./scripts/build-gamebar.ps1
+      - name: Upload preview and public signing details
+        uses: actions/upload-artifact@v4
+        with:
+          name: Reticle-GameBar-v0.3.0-preview.1-win-x64
+          path: |
+            artifacts/Reticle-GameBar-v0.3.0-preview.1-win-x64.zip
+            artifacts/Reticle-GameBar-v0.3.0-preview.1-win-x64.zip.sha256
+            artifacts/Reticle-GameBar-v0.3.0-preview.1-signing.json
+            artifacts/Reticle-v0.3.0-preview.1-win-x64.zip
+            artifacts/Reticle-v0.3.0-preview.1-win-x64.zip.sha256
+          if-no-files-found: error

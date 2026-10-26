@@ -130,6 +130,13 @@ internal static class Diagnostics
             Check("toggleButtonEnablesOverlay", toggle.Content.ToString() == "关闭桌面准星");
             toggle.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
             Check("toggleButtonDisablesOverlay", toggle.Content.ToString() == "开启桌面准星");
+            var modeBox = (System.Windows.Controls.ComboBox)editor.FindName("OverlayModeBox");
+            modeBox.SelectedIndex = 1;
+            Check("gameBarModeHasSeparateToggle", toggle.Content.ToString() == "开启全屏组件");
+            Check("gameBarMonitorManagedByWidget", !((System.Windows.Controls.ComboBox)editor.FindName("MonitorBox")).IsEnabled);
+            Check("gameBarPackageIdentityResolved", GameBarBridge.PackageFamilyName.StartsWith("ReticleStudio.GameBar_", StringComparison.Ordinal));
+            modeBox.SelectedIndex = 0;
+            Check("switchingBackKeepsOverlayDisabled", toggle.Content.ToString() == "开启桌面准星");
             editor.Width = 950; editor.Height = 680; Pump(); editor.UpdateLayout();
             WritePng(Render(editor, (int)editor.ActualWidth, (int)editor.ActualHeight), Path.Combine(directory, "editor-small.png"));
             var togglePosition = toggle.TransformToAncestor(editor).Transform(new Point(0, toggle.ActualHeight));

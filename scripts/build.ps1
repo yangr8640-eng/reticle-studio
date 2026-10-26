@@ -20,6 +20,7 @@ try {
         Copy-Item README.md artifacts/Reticle-win-x64/README.md
         New-Item -ItemType Directory -Force artifacts/Reticle-win-x64/docs | Out-Null
         Copy-Item docs/*.png artifacts/Reticle-win-x64/docs/
+        Copy-Item docs/fullscreen-gamebar.md artifacts/Reticle-win-x64/docs/
         Compress-Archive -Path artifacts/Reticle-win-x64/* -DestinationPath $archivePath -Force
         $hash = (Get-FileHash $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
         Set-Content -Encoding ascii -Path "$archivePath.sha256" -Value "$hash  $archiveName"
