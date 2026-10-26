@@ -17,13 +17,14 @@ public partial class App : Application
             Shutdown(result);
             return;
         }
-        instance = new Mutex(true, "Local\\ReticleStudio.Desktop", out bool first);
+        bool independent = AppVersion.IsIndependent || e.Args.Contains("--independent");
+        instance = new Mutex(true, independent ? "Local\\ReticleStudio.Independent" : "Local\\ReticleStudio.Desktop", out bool first);
         if (!first)
         {
             MessageBox.Show("准星工具已在运行。请从任务栏或托盘打开设置。", "Reticle Studio");
             Shutdown(); return;
         }
-        MainWindow = new MainWindow();
+        MainWindow = new MainWindow(preferIndependent: independent);
         MainWindow.Show();
     }
     protected override void OnExit(ExitEventArgs e)

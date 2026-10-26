@@ -11,7 +11,7 @@
         <TextBlock x:Name="DetailText" Foreground="#9AA9BD" Margin="0,8,0,0" TextWrapping="Wrap"/>
       </StackPanel>
     </Border>
-    <TextBlock Text="检查时连接 GitHub 获取版本信息。下载后解压运行；全屏 Game Bar 组件如有更新，需单独安装。" Foreground="#9AA9BD" FontSize="11" TextWrapping="Wrap"/>
+    <TextBlock x:Name="UpdateHint" Text="检查时连接 GitHub 获取版本信息。下载后解压运行；全屏 Game Bar 组件如有更新，需单独安装。" Foreground="#9AA9BD" FontSize="11" TextWrapping="Wrap"/>
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
       <Button x:Name="CheckButton" Content="重新检查" Click="Check_Click" Margin="0,0,10,0"/>
       <Button x:Name="DownloadButton" Content="打开发布页" Click="Download_Click" Background="#234337" BorderBrush="#67E8B0"/>

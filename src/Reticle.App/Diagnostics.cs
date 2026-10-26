@@ -72,6 +72,7 @@ internal static class Diagnostics
             Check("editorLayout", editor.ActualWidth >= 950 && editor.ActualHeight >= 680);
             CheckTrayRestore(editor, directory, Check);
             CheckTrayExitWithoutDesktopOverlay(directory, Check);
+            CheckIndependentStartup(directory, Check);
             CheckUpdateWindow(editor, directory, Check);
             var model = (CrosshairSettings)editor.DataContext;
             ((System.Windows.Controls.Button)editor.FindName("CircleButton")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
@@ -141,6 +142,18 @@ internal static class Diagnostics
             Check("gameBarModeHasSeparateToggle", toggle.Content.ToString() == "开启全屏组件");
             Check("gameBarMonitorManagedByWidget", !((System.Windows.Controls.ComboBox)editor.FindName("MonitorBox")).IsEnabled);
             Check("gameBarPackageIdentityResolved", GameBarBridge.PackageFamilyName.StartsWith("ReticleStudio.GameBar_", StringComparison.Ordinal));
+            modeBox.SelectedIndex = 2;
+            Check("independentModeHasSeparateToggle", toggle.Content.ToString() == "开启独立准星");
+            Check("independentModeSelectsMonitor", ((System.Windows.Controls.ComboBox)editor.FindName("MonitorBox")).IsEnabled);
+            Check("independentModeDoesNotNeedGameBar", ((System.Windows.Controls.TextBlock)editor.FindName("ModeHint")).Text.Contains("无需 Game Bar"));
+            Check("independentModePreferenceSaved", File.ReadAllText(editorStore.Path + ".display") == "2");
+            if (!File.Exists(IndependentOverlayBridge.HostPath))
+            {
+                toggle.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                Pump();
+                Check("missingIndependentHostFailsWithoutCrash", toggle.Content.ToString() == "开启独立准星" && toggle.IsEnabled &&
+                    ((System.Windows.Controls.TextBlock)editor.FindName("OverlayStatus")).Text.Contains("安装"));
+            }
             modeBox.SelectedIndex = 0;
             Check("switchingBackKeepsOverlayDisabled", toggle.Content.ToString() == "开启桌面准星");
             editor.Width = 950; editor.Height = 680; Pump(); editor.UpdateLayout();
@@ -269,11 +282,24 @@ internal static class Diagnostics
         }
     }
 
+    private static void CheckIndependentStartup(string directory, Action<string, bool> check)
+    {
+        var editor = new MainWindow(new SettingsStore(Path.Combine(directory, "test-independent-startup-settings.json")), preferIndependent: true);
+        try
+        {
+            editor.ShowActivated = false; editor.Show(); Pump();
+            check("independentShortcutSelectsIndependentMode", ((System.Windows.Controls.ComboBox)editor.FindName("OverlayModeBox")).SelectedIndex == 2);
+            check("independentStartupDoesNotEnableWithoutConsent", ((System.Windows.Controls.Button)editor.FindName("ToggleButton")).Content.ToString() == "开启独立准星");
+            check("independentEditionHasDistinctWindowTitle", editor.Title.Contains("独立覆盖版"));
+        }
+        finally { editor.Close(); }
+    }
+
     private static void CheckUpdateWindow(MainWindow owner, string directory, Action<string, bool> check)
     {
-        var handler = new DiagnosticUpdateHandler();
+        var handler = new DiagnosticUpdateHandler { Version = AppVersion.IsIndependent ? "99.0.0-independent.1" : "99.0.0" };
         using var client = new System.Net.Http.HttpClient(handler);
-        var window = new UpdateWindow(new UpdateChecker(client)) { Owner = owner };
+        var window = new UpdateWindow(new UpdateChecker(client, AppVersion.IsIndependent ? ReleaseChannel.Independent : ReleaseChannel.Standard)) { Owner = owner };
         try
         {
             window.Show(); Pump(); window.UpdateLayout();

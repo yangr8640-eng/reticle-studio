@@ -46,6 +46,18 @@ internal static class UpdateChecks
             }));
             Assert(new UpdateChecker(client).GetLatestAsync(false).GetAwaiter().GetResult()!.Version.Display == "0.2.1" && calls == 2);
         });
+        check("Independent releases have their own update channel", () =>
+        {
+            using var client = new HttpClient(new Handler((_, _) => Task.FromResult(Json(new[]
+            {
+                Release("v0.3.0-independent.1", true), Release("v0.3.0-independent.2", true),
+                Release("v0.3.0-preview.99", true), Release("v9.0.0"), Release("v0.2.1")
+            }))));
+            var independent = new UpdateChecker(client, ReleaseChannel.Independent).GetLatestAsync(true).GetAwaiter().GetResult()!;
+            Assert(independent.Version.Display == "0.3.0-independent.2" && independent.Version.IsIndependent);
+            Assert(new UpdateChecker(client).GetLatestAsync(true).GetAwaiter().GetResult()!.Version.Display == "9.0.0");
+            Assert(new UpdateChecker(client, ReleaseChannel.Independent).GetLatestAsync(false).GetAwaiter().GetResult() is null);
+        });
         check("Empty release list produces no release", () =>
         {
             using var client = new HttpClient(new Handler((_, _) => Task.FromResult(Json(Array.Empty<object>()))));

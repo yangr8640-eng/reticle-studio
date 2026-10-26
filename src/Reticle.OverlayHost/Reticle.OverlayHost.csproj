@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>Reticle.OverlayHost</AssemblyName>
+    <RootNamespace>Reticle.OverlayHost</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\Reticle.App\Assets\reticle.ico</ApplicationIcon>
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Reticle.Core\Reticle.Core.csproj" />
+    <Compile Include="..\Reticle.App\OverlayWindow.cs" Link="Rendering\OverlayWindow.cs" />
+    <Compile Include="..\Reticle.App\CrosshairView.cs" Link="Rendering\CrosshairView.cs" />
+    <Compile Include="..\Reticle.App\NativeMethods.cs" Link="Rendering\NativeMethods.cs" />
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+    <Compile Remove="Checks\**\*.cs" />
+    <InternalsVisibleTo Include="Reticle.OverlayHost.Checks" />
+  </ItemGroup>
+</Project>

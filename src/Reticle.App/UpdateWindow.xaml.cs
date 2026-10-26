@@ -19,10 +19,15 @@ public partial class UpdateWindow : Window
 
     public UpdateWindow(UpdateChecker? updateChecker = null)
     {
-        checker = updateChecker ?? new UpdateChecker(Client);
+        checker = updateChecker ?? new UpdateChecker(Client, AppVersion.IsIndependent ? ReleaseChannel.Independent : ReleaseChannel.Standard);
         InitializeComponent();
         CurrentVersionText.Text = "当前版本  v" + AppVersion.Current;
         IncludePreview.IsChecked = AppVersion.Parsed.IsPrerelease;
+        if (AppVersion.IsIndependent)
+        {
+            IncludePreview.Content = "包含独立覆盖预览版";
+            UpdateHint.Text = "仅检查独立覆盖版更新。下载完整安装包后运行安装程序升级；不需要安装 Game Bar 组件。";
+        }
         Loaded += async (_, _) => await CheckAsync();
         Closed += (_, _) => { closed = true; lifetime.Cancel(); lifetime.Dispose(); };
     }
@@ -57,7 +62,8 @@ public partial class UpdateWindow : Window
             else
             {
                 StatusText.Text = "当前已是最新版本";
-                DetailText.Text = "未发现比当前版本更新的" + (IncludePreview.IsChecked == true ? "正式版或预览版。" : "正式版。");
+                DetailText.Text = AppVersion.IsIndependent ? "未发现比当前版本更新的独立覆盖版。"
+                    : "未发现比当前版本更新的" + (IncludePreview.IsChecked == true ? "正式版或预览版。" : "正式版。");
             }
         }
         catch (OperationCanceledException) when (closed) { }

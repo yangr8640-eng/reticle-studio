@@ -1,0 +1,35 @@
+name: Independent overlay
+
+on:
+  push:
+    branches: ['codex/independent-overlay']
+    tags: ['v*-independent.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and check editor, protocol and host
+        shell: pwsh
+        run: ./scripts/build.ps1
+      - name: Build complete independent installer package
+        shell: pwsh
+        run: ./scripts/build-independent.ps1
+      - name: Upload complete package and public signing details
+        uses: actions/upload-artifact@v4
+        with:
+          name: Reticle-Independent-win-x64
+          path: |
+            artifacts/Reticle-Independent-v*-win-x64.zip
+            artifacts/Reticle-Independent-v*-win-x64.zip.sha256
+            artifacts/Reticle-Independent-v*-signing.json
+          if-no-files-found: error

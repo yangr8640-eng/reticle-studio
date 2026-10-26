@@ -7,6 +7,7 @@ if (Test-Path -LiteralPath $localSdk) { $dotnet = $localSdk }
 if (-not $dotnet) { throw 'Install the .NET 10 SDK first.' }
 Push-Location $root
 try {
+    & (Join-Path $PSScriptRoot 'test-independent-installer.ps1')
     $version = ([xml](Get-Content Directory.Build.props -Raw)).Project.PropertyGroup.Version
     $archiveName = "Reticle-v$version-win-x64.zip"
     $archivePath = Join-Path 'artifacts' $archiveName
@@ -16,6 +17,11 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
     & $dotnet run --project tests/Reticle.GameBar.Tests -c Release
     if ($LASTEXITCODE -ne 0) { throw 'Game Bar tests failed.' }
+    & $dotnet build src/Reticle.OverlayHost -c Release
+    if ($LASTEXITCODE -ne 0) { throw 'Independent overlay build failed.' }
+    $hostAssembly = Join-Path $root 'src\Reticle.OverlayHost\bin\Release\net10.0-windows\Reticle.OverlayHost.dll'
+    & $dotnet run --project src/Reticle.OverlayHost/Checks -c Release -- $dotnet $hostAssembly
+    if ($LASTEXITCODE -ne 0) { throw 'Independent overlay checks failed.' }
     if ($Portable) {
         & $dotnet publish src/Reticle.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o artifacts/Reticle-win-x64
         if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }

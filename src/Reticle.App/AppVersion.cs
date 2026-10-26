@@ -9,4 +9,5 @@ internal static class AppVersion
         .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion.Split('+')[0];
     public static ReleaseVersion Parsed { get; } = ReleaseVersion.TryParse(Current, out var version)
         ? version : throw new InvalidOperationException("应用版本号无效。");
+    public static bool IsIndependent => Parsed.IsIndependent;
 }

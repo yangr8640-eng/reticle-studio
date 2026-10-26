@@ -161,4 +161,5 @@ Check("Game Bar state preserves settings, heartbeat and explicit disabled state"
     finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
 });
 UpdateChecks.Run(Check);
+IndependentOverlayChecks.Run(Check);
 Console.WriteLine($"All {passed} checks passed.");

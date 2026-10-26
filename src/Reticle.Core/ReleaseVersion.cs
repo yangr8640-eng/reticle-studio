@@ -13,6 +13,7 @@ public sealed class ReleaseVersion : IComparable<ReleaseVersion>
     private readonly string[] preview;
     public string Display { get; }
     public bool IsPrerelease => preview.Length > 0;
+    public bool IsIndependent => preview.Length > 0 && preview[0] == "independent";
 
     private ReleaseVersion(Match match)
     {

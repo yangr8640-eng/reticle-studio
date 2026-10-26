@@ -5,7 +5,9 @@ namespace Reticle.Core;
 
 public sealed record ReleaseInfo(ReleaseVersion Version, Uri Page);
 
-public sealed class UpdateChecker(HttpClient client)
+public enum ReleaseChannel { Standard, Independent }
+
+public sealed class UpdateChecker(HttpClient client, ReleaseChannel channel = ReleaseChannel.Standard)
 {
     public const string ReleasesPage = "https://github.com/yangr8640-eng/reticle-studio/releases";
     private const string Api = "https://api.github.com/repos/yangr8640-eng/reticle-studio/releases";
@@ -36,6 +38,7 @@ public sealed class UpdateChecker(HttpClient client)
                     || !item.TryGetProperty("tag_name", out var tag) || tag.ValueKind != JsonValueKind.String
                     || !ReleaseVersion.TryParse(tag.GetString(), out var version)) continue;
                 if (!includePrereleases && (pre.GetBoolean() || version.IsPrerelease)) continue;
+                if (version.IsIndependent != (channel == ReleaseChannel.Independent)) continue;
                 if (latest is null || version.CompareTo(latest.Version) > 0)
                     // Only navigate to this project's release pages, never an arbitrary response URL.
                     latest = new(version, new Uri(ReleasesPage + "/tag/" + Uri.EscapeDataString(tag.GetString()!)));
