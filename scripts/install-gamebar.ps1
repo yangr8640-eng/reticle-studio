@@ -14,7 +14,10 @@ $packageRoot = [IO.Path]::GetFullPath($PackageDirectory).TrimEnd('\', '/')
 $manifestPath = Join-Path $packageRoot 'package-files.json'
 $bundle = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 if ($bundle.schemaVersion -ne 1 -or $bundle.identity -ne 'ReticleStudio.GameBar' -or
-    $bundle.publisher -ne 'CN=ReticleStudio' -or $bundle.version -ne '0.3.0.0') {
+    $bundle.publisher -ne 'CN=ReticleStudio' -or
+    $bundle.version -notmatch '\A(0|[1-9][0-9]{0,4})(\.(0|[1-9][0-9]{0,4})){3}\z' -or
+    @($bundle.version.Split('.') | Where-Object { [int]$_ -gt 65535 }).Count -or
+    $bundle.preview -notmatch '\A[0-9]+\.[0-9]+\.[0-9]+-preview\.[1-9][0-9]*\z') {
     throw 'Unexpected preview package metadata.'
 }
 
@@ -176,11 +179,11 @@ foreach ($required in @($appManifest.SelectNodes('/a:Package/a:Dependencies/a:Pa
     if (-not $dependencyIdentities.ContainsKey($required.Name)) { throw "Missing bundled framework: $($required.Name)" }
     $provided = $dependencyIdentities[$required.Name]
     if ($provided.Publisher -ne $required.Publisher -or [Version]$provided.Version -lt [Version]$required.MinVersion) {
-        throw "Bundled framework does not satisfy dependency: $($required.Name)"
+        throw "Bundled framework does not satisfy dependency: $($required.Name). Required version >= $($required.MinVersion), bundled version $($provided.Version). Required publisher '$($required.Publisher)', bundled publisher '$($provided.Publisher)'."
     }
 }
 
-Write-Host 'Reticle Game Bar v0.3.0-preview.1 - preview only; CS fullscreen compatibility needs testing.'
+Write-Host "Reticle Game Bar v$($bundle.preview) (package $($bundle.version)) - preview only; CS fullscreen compatibility needs testing."
 Write-Host "Signing certificate: $($certificate.Subject)"
 Write-Host "Certificate thumbprint: $($certificate.Thumbprint)"
 Write-Host "Certificate expires: $($certificate.NotAfter.ToString('yyyy-MM-dd'))"
@@ -215,6 +218,29 @@ if ($trustedSignature.Status.ToString() -ne 'Valid') { throw "Trusted package si
 if (-not (Get-AppxPackage -Name Microsoft.XboxGamingOverlay)) { throw 'Install Xbox Game Bar from Microsoft Store for this user, then retry.' }
 $installed = Get-AppxPackage -Name ReticleStudio.GameBar
 if ($installed -and [Version]$installed.Version -gt [Version]$bundle.version) { throw 'A newer Game Bar package is already installed; downgrades are not performed.' }
+if ($installed -and [Version]$installed.Version -eq [Version]$bundle.version) {
+    if ($installed.Publisher -ne $bundle.publisher -or $installed.Architecture.ToString() -ne 'X64') { throw 'An incompatible package with this name and version is already installed.' }
+    # Compare signed payload block maps before treating a same-version rerun as a no-op.
+    $installedBlockMap = Join-Path $installed.InstallLocation 'AppxBlockMap.xml'
+    $samePayload = $false
+    if (Test-Path -LiteralPath $installedBlockMap -PathType Leaf) {
+        $archive = [IO.Compression.ZipFile]::OpenRead($appxPath)
+        try {
+            $entry = $archive.GetEntry('AppxBlockMap.xml')
+            if (-not $entry) { throw 'The preview package has no block map.' }
+            $stream = $entry.Open()
+            $hash = [Security.Cryptography.SHA256]::Create()
+            try { $incomingBlockMapHash = [BitConverter]::ToString($hash.ComputeHash($stream)).Replace('-', '') }
+            finally { $hash.Dispose(); $stream.Dispose() }
+            $samePayload = (Get-FileHash -LiteralPath $installedBlockMap -Algorithm SHA256).Hash -eq $incomingBlockMapHash
+        } finally { $archive.Dispose() }
+    }
+    if ($samePayload) {
+        Write-Host "Already installed for $($identityContext.Name): $($installed.PackageFullName)"
+        return
+    }
+    throw 'This package version is already installed with different or unverifiable content. Use a preview with a higher package version; the installer does not uninstall existing apps.'
+}
 $missingDependencies = @()
 foreach ($required in @($appManifest.SelectNodes('/a:Package/a:Dependencies/a:PackageDependency', $namespaceManager))) {
     $available = @(Get-AppxPackage -Name $required.Name -PackageTypeFilter Framework | Where-Object {
@@ -233,7 +259,8 @@ foreach ($required in @($appManifest.SelectNodes('/a:Package/a:Dependencies/a:Pa
 }
 $parameters = @{ Path = $appxPath; ErrorAction = 'Stop' }
 if ($missingDependencies.Count) { $parameters.DependencyPath = [string[]]$missingDependencies }
-Add-AppxPackage @parameters
+try { Add-AppxPackage @parameters }
+catch { throw "Installation failed. Close the Reticle Studio Game Bar widget before retrying if Windows reports it is in use; no applications were forcibly closed. $($_.Exception.Message)" }
 $installed = Get-AppxPackage -Name ReticleStudio.GameBar
 if (-not $installed -or $installed.Version -ne $bundle.version) { throw 'Installation did not produce the expected package version.' }
 Write-Host "Installed for $($identityContext.Name): $($installed.PackageFullName)"

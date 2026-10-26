@@ -11,6 +11,15 @@ namespace Reticle.GameBar
         public bool CenterDot, Outline = true;
         public double DotSize = 3, OutlineWidth = 1, OffsetX, OffsetY;
 
+        public double EffectiveOpacity(double requestedOpacity)
+        {
+            // XboxGameBarSamples assigns RequestedOpacity directly to XAML Opacity (0..1).
+            // Only the editor's own percentage needs converting; dividing both by 100 hides the reticle.
+            double editor = double.IsNaN(Opacity) || double.IsInfinity(Opacity) ? 100 : Opacity;
+            double host = double.IsNaN(requestedOpacity) || double.IsInfinity(requestedOpacity) ? 1 : requestedOpacity;
+            return Math.Max(0, Math.Min(100, editor)) / 100 * Math.Max(0, Math.Min(1, host));
+        }
+
         public static double Clamp(double value, double minimum, double maximum, double fallback)
         {
             return double.IsNaN(value) || double.IsInfinity(value) ? fallback : Math.Round(Math.Max(minimum, Math.Min(maximum, value)), 1);

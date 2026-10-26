@@ -1,6 +1,8 @@
 # 全屏准星预览版 · Xbox Game Bar
 
-v0.3.0-preview.1 新增独立的 Game Bar 组件，用于保留 CS 视频设置中的“全屏”选项。它通过 Windows 游戏覆盖层显示准星，不再依赖原有 WPF 桌面窗口盖住游戏。
+v0.3.0-preview.2 新增独立的 Game Bar 组件，用于保留 CS 视频设置中的“全屏”选项。它通过 Windows 游戏覆盖层显示准星，不再依赖原有 WPF 桌面窗口盖住游戏。
+
+preview.2 修正准星不透明度的计算：Game Bar 返回的 `0..1` 值直接参与混合，不再额外除以 100。preview.1 在宿主返回 `1` 时只绘制 1% 不透明度，可能导致“同步已连接但看不到准星”。
 
 **这是实验支持，不是已完成 CS 实测的正式兼容版。** 当前机器未安装 CS。真正绕过桌面合成的独占呈现、Vulkan、不同显卡驱动及系统设置仍可能影响 Game Bar。请先在 CS 全屏时按 **Win+G**：Game Bar 必须能显示在游戏画面上。若它只会切出游戏，新组件也不能保证显示。
 
@@ -8,8 +10,8 @@ v0.3.0-preview.1 新增独立的 Game Bar 组件，用于保留 CS 视频设置�
 
 需要 Windows 10/11 x64、已安装并可用的 Xbox Game Bar，以及两个下载：
 
-- `Reticle-v0.3.0-preview.1-win-x64.zip`：原有编辑器的预览版。
-- `Reticle-GameBar-v0.3.0-preview.1-win-x64.zip`：需要安装的 Game Bar 组件，不能作为普通 EXE 直接运行。
+- `Reticle-v0.3.0-preview.2-win-x64.zip`：原有编辑器的预览版。
+- `Reticle-GameBar-v0.3.0-preview.2-win-x64.zip`：需要安装的 Game Bar 组件，不能作为普通 EXE 直接运行。
 
 Game Bar 预览包采用测试代码签名，尚未通过 Microsoft Store 分发。安装脚本会核对包名、发布者、签名证书及文件校验值。公开 `.cer` 仅包含公钥，私钥不在下载包中。
 
@@ -50,3 +52,7 @@ Game Bar 预览包采用测试代码签名，尚未通过 Microsoft Store 分发
 Game Bar 的固定及鼠标穿透由用户控制。无可靠覆盖通道时，程序不会强行修改游戏窗口或操作系统安全设置。
 
 参考：[Microsoft Game Bar SDK](https://learn.microsoft.com/en-us/xbox/game-bar/)、[固定组件鼠标穿透](https://learn.microsoft.com/en-us/xbox/game-bar/guide/click-through)、[全屏优化与 Game Bar](https://devblogs.microsoft.com/directx/demystifying-full-screen-optimizations/)。
+
+### 开发诊断
+
+组件在自己的 LocalState 目录记录 `widget-diagnostics.json`，最多每 2 秒更新一次，包含开关、心跳、画布尺寸、宿主和最终不透明度、图元数、固定与穿透状态。没有游戏进程信息或屏幕内容。排查时可在同一目录创建空文件 `capture-widget.request`，组件会消费该请求并导出仅包含自身准星绘制的 `widget-reticle.png`，用于像素验证；不会截取游戏或其他窗口。

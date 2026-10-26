@@ -14,6 +14,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
     & $dotnet run --project tests/Reticle.Tests -c Release
     if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
+    & $dotnet run --project tests/Reticle.GameBar.Tests -c Release
+    if ($LASTEXITCODE -ne 0) { throw 'Game Bar tests failed.' }
     if ($Portable) {
         & $dotnet publish src/Reticle.App -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -o artifacts/Reticle-win-x64
         if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }

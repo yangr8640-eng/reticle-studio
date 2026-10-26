@@ -37,6 +37,7 @@
     <Compile Include="CrosshairModel.cs" />
     <Compile Include="ConfigurationReader.cs" />
     <Compile Include="CrosshairCanvas.cs" />
+    <Compile Include="WidgetDiagnostics.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <ApplicationDefinition Include="App.xaml"><Generator>MSBuild:Compile</Generator></ApplicationDefinition>
     <Page Include="MainPage.xaml"><Generator>MSBuild:Compile</Generator></Page>

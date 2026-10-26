@@ -6,9 +6,9 @@
 
 ## 运行
 
-**全屏实验版 v0.3.0-preview.1**：新增 Xbox Game Bar 组件，可在受支持的全屏游戏中显示准星。CS 可以保留“全屏”选项；必须安装并固定组件、启用鼠标穿透。详见 [全屏组件安装与使用](docs/fullscreen-gamebar.md)。尚未完成实际 CS 全屏测试，原 v0.2.1 为稳定桌面版。
+**全屏实验版 v0.3.0-preview.2**：新增 Xbox Game Bar 组件，可在受支持的全屏游戏中显示准星。CS 可以保留“全屏”选项；必须安装并固定组件、启用鼠标穿透。详见 [全屏组件安装与使用](docs/fullscreen-gamebar.md)。尚未完成实际 CS 全屏测试，原 v0.2.1 为稳定桌面版。
 
-本地项目中双击 **`Start-Reticle.cmd`**。便携编辑器位于 `artifacts/Reticle-win-x64/Reticle.exe`，当前源码打包为 `artifacts/Reticle-v0.3.0-preview.1-win-x64.zip`。全屏组件需单独安装。
+本地项目中双击 **`Start-Reticle.cmd`**。便携编辑器位于 `artifacts/Reticle-win-x64/Reticle.exe`，当前源码打包为 `artifacts/Reticle-v0.3.0-preview.2-win-x64.zip`。全屏组件需单独安装。
 
 远程下载：[GitHub Releases](https://github.com/yangr8640-eng/reticle-studio/releases)。仓库已公开，无需登录即可查看源码与下载发行包。
 

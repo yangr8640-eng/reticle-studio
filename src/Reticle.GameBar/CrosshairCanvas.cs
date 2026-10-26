@@ -10,15 +10,19 @@ namespace Reticle.GameBar
     public sealed class CrosshairCanvas : Canvas
     {
         public CrosshairCanvas() { IsHitTestVisible = false; }
+        public double LastEffectiveOpacity { get; private set; }
+        public int DrawnPrimitiveCount { get; private set; }
 
         public void Draw(CrosshairModel settings, double dpiScale, bool enabled, double requestedOpacity)
         {
             Children.Clear();
+            DrawnPrimitiveCount = 0;
+            LastEffectiveOpacity = settings.EffectiveOpacity(requestedOpacity);
             if (!enabled || ActualWidth <= 0 || ActualHeight <= 0) return;
             var group = new Canvas
             {
                 Width = ActualWidth, Height = ActualHeight,
-                Opacity = settings.Opacity / 100 * Math.Max(0, Math.Min(100, requestedOpacity)) / 100,
+                Opacity = LastEffectiveOpacity,
                 IsHitTestVisible = false
             };
             Children.Add(group);
@@ -37,6 +41,7 @@ namespace Reticle.GameBar
             if (settings.Shape == "Circle") AddRing(group, x, y, settings.Radius / dpiScale, settings.Thickness / dpiScale, colorBrush);
             else foreach (var arm in settings.Arms()) AddArm(group, x, y, dpiScale, arm, settings.Thickness / dpiScale, colorBrush, PenLineCap.Flat);
             if (settings.CenterDot) AddDot(group, x, y, settings.DotSize / 2 / dpiScale, colorBrush);
+            DrawnPrimitiveCount = group.Children.Count;
         }
 
         private static void AddArm(Canvas parent, double x, double y, double scale, CrosshairSegment arm, double width, Brush brush, PenLineCap cap)

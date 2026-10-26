@@ -9,7 +9,7 @@
         <StackPanel><TextBlock Text="RETICLE STUDIO" FontSize="22" FontWeight="Bold"/><TextBlock Text="让每一次瞄准，都有自己的准星。" Foreground="#9AA9BD" FontSize="12" Margin="0,4,0,0"/></StackPanel>
       </StackPanel>
       <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-        <Border Background="#202B2A" CornerRadius="5" Padding="9,5" Margin="0,0,12,0"><TextBlock Text="v0.3.0 PREVIEW" Foreground="#9DC4B6" FontSize="10"/></Border>
+        <Border Background="#202B2A" CornerRadius="5" Padding="9,5" Margin="0,0,12,0"><TextBlock Text="v0.3.0 PREVIEW 2" Foreground="#9DC4B6" FontSize="10"/></Border>
         <Button Content="收起到托盘" Click="MinimizeToTray_Click" Padding="12,8"/>
       </StackPanel>
     </Grid>

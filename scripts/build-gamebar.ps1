@@ -8,7 +8,18 @@ $root = [IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
 $artifactsRoot = Join-Path $root 'artifacts'
 $projectPath = Join-Path $root 'src\Reticle.GameBar\Reticle.GameBar.csproj'
 $sdkVersion = '10.0.26100.0'
-$archiveName = 'Reticle-GameBar-v0.3.0-preview.1-win-x64.zip'
+$previewVersion = [string]([xml](Get-Content -LiteralPath (Join-Path $root 'Directory.Build.props') -Raw)).Project.PropertyGroup.Version
+if ($previewVersion -notmatch '\A[0-9]+\.[0-9]+\.[0-9]+-preview\.[1-9][0-9]*\z') { throw 'Game Bar builds require a numbered preview version in Directory.Build.props.' }
+$sourceManifest = [xml](Get-Content -LiteralPath (Join-Path $root 'src\Reticle.GameBar\Package.appxmanifest') -Raw)
+$sourceIdentity = $sourceManifest.Package.Identity
+$packageVersion = [string]$sourceIdentity.Version
+if ($sourceIdentity.Name -ne 'ReticleStudio.GameBar' -or $sourceIdentity.Publisher -ne 'CN=ReticleStudio' -or
+    $packageVersion -notmatch '\A(0|[1-9][0-9]{0,4})(\.(0|[1-9][0-9]{0,4})){3}\z' -or
+    @($packageVersion.Split('.') | Where-Object { [int]$_ -gt 65535 }).Count) {
+    throw 'The source APPX manifest must contain the expected identity and a valid four-part package version.'
+}
+$archiveName = "Reticle-GameBar-v$previewVersion-win-x64.zip"
+$signingName = "Reticle-GameBar-v$previewVersion-signing.json"
 if (-not $MSBuildPath) {
     $msbuildCommand = Get-Command MSBuild.exe -ErrorAction SilentlyContinue
     if ($msbuildCommand) { $MSBuildPath = $msbuildCommand.Source }
@@ -50,7 +61,7 @@ try {
         $manifest = Read-AppxManifest $package.FullName
         $identity = $manifest.Package.Identity
         if ($identity.Name -eq 'ReticleStudio.GameBar') {
-            if ($identity.Publisher -ne 'CN=ReticleStudio' -or $identity.Version -ne '0.3.0.0' -or $identity.ProcessorArchitecture -ne 'x64') {
+            if ($identity.Publisher -ne 'CN=ReticleStudio' -or $identity.Version -ne $packageVersion -or $identity.ProcessorArchitecture -ne 'x64') {
                 throw 'Unexpected Game Bar package identity, version or architecture.'
             }
             $mainPackages += $package
@@ -62,7 +73,7 @@ try {
         }
     }
     if ($mainPackages.Count -ne 1) { throw "Expected one Game Bar APPX, found $($mainPackages.Count)." }
-    $mainName = 'ReticleStudio.GameBar_0.3.0.0_x64.appx'
+    $mainName = "ReticleStudio.GameBar_${packageVersion}_x64.appx"
     $mainPath = Join-Path $payloadRoot $mainName
     Copy-Item -LiteralPath $mainPackages[0].FullName -Destination $mainPath
     $dependencyPaths = @()
@@ -84,7 +95,7 @@ try {
     $guidePath = Join-Path $root 'docs\fullscreen-gamebar.md'
     if (Test-Path -LiteralPath $guidePath) { Copy-Item -LiteralPath $guidePath -Destination (Join-Path $payloadRoot 'README.md') }
     @"
-Reticle Studio Game Bar v0.3.0-preview.1
+Reticle Studio Game Bar v$previewVersion (package $packageVersion)
 
 This is a signed preview package for testing the Game Bar overlay. It is not a
 verified CS fullscreen release and is not a Microsoft Store package.
@@ -122,8 +133,8 @@ separately from Local Computer > Trusted People after uninstalling the preview.
         [ordered]@{ path=$_.FullName.Substring($payloadRoot.Length + 1).Replace('\','/'); sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
     })
     [ordered]@{
-        schemaVersion=1; identity='ReticleStudio.GameBar'; publisher='CN=ReticleStudio'; version='0.3.0.0'
-        preview='0.3.0-preview.1'; mainPackage=$mainName; certificate=$certificateName
+        schemaVersion=1; identity='ReticleStudio.GameBar'; publisher='CN=ReticleStudio'; version=$packageVersion
+        preview=$previewVersion; mainPackage=$mainName; certificate=$certificateName
         certificateThumbprint=$certificate.Thumbprint; dependencies=@($dependencyPaths | Sort-Object); files=$files
     } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $payloadRoot 'package-files.json') -Encoding UTF8
     & (Join-Path $PSScriptRoot 'install-gamebar.ps1') -PackageDirectory $payloadRoot -VerifyOnly
@@ -132,8 +143,8 @@ separately from Local Computer > Trusted People after uninstalling the preview.
     Compress-Archive -Path (Join-Path $payloadRoot '*') -DestinationPath $archivePath -Force
     $hash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
     Set-Content -LiteralPath "$archivePath.sha256" -Encoding ascii -Value "$hash  $archiveName"
-    [ordered]@{ archive=$archiveName; sha256=$hash; certificateThumbprint=$certificate.Thumbprint; certificateSubject=$certificate.Subject; preview='0.3.0-preview.1' } |
-        ConvertTo-Json | Set-Content -LiteralPath (Join-Path $artifactsRoot 'Reticle-GameBar-v0.3.0-preview.1-signing.json') -Encoding UTF8
+    [ordered]@{ archive=$archiveName; sha256=$hash; certificateThumbprint=$certificate.Thumbprint; certificateSubject=$certificate.Subject; preview=$previewVersion; packageVersion=$packageVersion } |
+        ConvertTo-Json | Set-Content -LiteralPath (Join-Path $artifactsRoot $signingName) -Encoding UTF8
     Write-Host "Created $archivePath"
     Write-Host "SHA256: $hash"
     Write-Host "Preview certificate thumbprint: $($certificate.Thumbprint)"

@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Gaming.XboxGameBar;
+using Windows.Data.Json;
 using Windows.Foundation;
 using Windows.Graphics.Display;
 using Windows.Storage;
@@ -16,6 +17,7 @@ namespace Reticle.GameBar
     public sealed partial class WidgetPage : Page, IDisposable
     {
         private readonly DispatcherTimer timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+        private readonly WidgetDiagnostics diagnostics = new WidgetDiagnostics();
         private XboxGameBarWidget widget;
         private DisplayInformation display;
         private CrosshairModel settings = new CrosshairModel();
@@ -119,7 +121,37 @@ namespace Reticle.GameBar
             bool expired = hasLiveState && (age > 15 || age < -5);
             if (expired) ReadStatus.Text = "桌面同步已超时，准星已隐藏。请重新开启编辑器中的 Game Bar 模式。";
             bool invalidInitialState = hasSeenLiveFile && !hasLiveState;
-            Reticle.Draw(settings, DpiScale, enabled && !expired && !invalidInitialState, widget.RequestedOpacity);
+            double requestedOpacity = widget.RequestedOpacity;
+            bool drawEnabled = enabled && !expired && !invalidInitialState;
+            Reticle.Draw(settings, DpiScale, drawEnabled, requestedOpacity);
+            if (!expired && !invalidInitialState && !enabled) ReadStatus.Text = "桌面同步已连接；编辑器已关闭准星。";
+            else if (drawEnabled && Reticle.LastEffectiveOpacity == 0) ReadStatus.Text = "准星不透明度为 0，请检查编辑器与 Game Bar 的透明度设置。";
+            var snapshot = new JsonObject
+            {
+                ["capturedAtUtc"] = JsonValue.CreateStringValue(DateTimeOffset.UtcNow.ToString("O")),
+                ["version"] = JsonValue.CreateStringValue("0.3.0-preview.2"),
+                ["enabled"] = JsonValue.CreateBooleanValue(enabled),
+                ["expired"] = JsonValue.CreateBooleanValue(expired),
+                ["invalidInitialState"] = JsonValue.CreateBooleanValue(invalidInitialState),
+                ["drawEnabled"] = JsonValue.CreateBooleanValue(drawEnabled),
+                ["gameBarDisplayMode"] = JsonValue.CreateStringValue(widget.GameBarDisplayMode.ToString()),
+                ["pinned"] = JsonValue.CreateBooleanValue(widget.Pinned),
+                ["clickThroughEnabled"] = JsonValue.CreateBooleanValue(widget.ClickThroughEnabled),
+                ["canvasWidth"] = Number(Reticle.ActualWidth),
+                ["canvasHeight"] = Number(Reticle.ActualHeight),
+                ["dpiScale"] = Number(DpiScale),
+                ["requestedOpacity"] = Number(requestedOpacity),
+                ["editorOpacity"] = Number(settings.Opacity),
+                ["effectiveOpacity"] = Number(Reticle.LastEffectiveOpacity),
+                ["primitiveCount"] = Number(Reticle.DrawnPrimitiveCount),
+                ["heartbeatAgeSeconds"] = Number(Math.Round(age, 2))
+            };
+            diagnostics.Record(snapshot, Reticle);
+        }
+
+        private static JsonValue Number(double value)
+        {
+            return double.IsNaN(value) || double.IsInfinity(value) ? JsonValue.Parse("null") : JsonValue.CreateNumberValue(value);
         }
 
         private async Task ResizeAndCenterAsync(bool force)
