@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private bool gameBarMode;
     private readonly Forms.NotifyIcon tray;
     private readonly System.Drawing.Icon trayIcon;
+    private UpdateWindow? updateWindow;
     private IntPtr handle;
     private bool overlayEnabled, ready, allowSave = true, zoomed;
     private int backgroundIndex;
@@ -33,6 +34,7 @@ public partial class MainWindow : Window
         store = settingsStore ?? new SettingsStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ReticleStudio", "settings.json"));
         settings = store.Load(out string? warning);
         InitializeComponent();
+        VersionText.Text = "v" + AppVersion.Current;
         DataContext = settings;
         Preview.PhysicalPixels = true;
         ColorInput.Text = settings.Color;
@@ -49,9 +51,11 @@ public partial class MainWindow : Window
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("显示 / 隐藏准星", null, (_, _) => Dispatcher.Invoke(ToggleOverlay));
         menu.Items.Add("打开设置", null, (_, _) => Dispatcher.Invoke(Restore));
+        menu.Items.Add("检查更新", null, (_, _) => Dispatcher.Invoke(ShowUpdates));
         menu.Items.Add("退出", null, (_, _) => Dispatcher.Invoke(Close));
         tray.ContextMenuStrip = menu;
-        tray.DoubleClick += (_, _) => Dispatcher.Invoke(Restore);
+        tray.MouseClick += Tray_MouseClick;
+        tray.MouseDoubleClick += Tray_MouseClick;
         SourceInitialized += (_, _) =>
         {
             handle = new WindowInteropHelper(this).Handle;
@@ -173,7 +177,22 @@ public partial class MainWindow : Window
         "4. 在组件中点居中；多屏位置请在 Game Bar 中调整。\n\n" +
         "需要 Windows / Game Bar 对当前游戏的覆盖支持。若 Win+G 切出或黑屏，请在 cs2.exe 属性的兼容性页取消「禁用全屏优化」，重启游戏再验证。CS 游戏内兼容性尚待实测。",
         "全屏准星 · Game Bar", MessageBoxButton.OK, MessageBoxImage.Information);
-    private void Restore() { Show(); WindowState = WindowState.Normal; Activate(); }
+    private void Tray_MouseClick(object? sender, Forms.MouseEventArgs e)
+    {
+        if (e.Button == Forms.MouseButtons.Left)
+            // Let the shell finish handling the tray flyout before activating the editor.
+            Dispatcher.BeginInvoke(() => { if (ready) Restore(); });
+    }
+    private void Restore() { Show(); if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal; Activate(); }
+    private void ShowUpdates()
+    {
+        Restore();
+        if (updateWindow is not null) { updateWindow.Activate(); return; }
+        updateWindow = new UpdateWindow { Owner = this };
+        updateWindow.Closed += (_, _) => updateWindow = null;
+        updateWindow.Show();
+    }
+    private void Update_Click(object sender, RoutedEventArgs e) => ShowUpdates();
     private void ToggleOverlay_Click(object sender, RoutedEventArgs e) => ToggleOverlay();
     private void MinimizeToTray_Click(object sender, RoutedEventArgs e) { Save(); Hide(); }
     private void Shape_Click(object sender, RoutedEventArgs e) => settings.Shape = Enum.Parse<CrosshairShape>((string)((Button)sender).Tag);

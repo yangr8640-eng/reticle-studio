@@ -67,6 +67,8 @@ internal static class Diagnostics
             editor.ShowActivated = false; editor.Show(); Pump(); editor.UpdateLayout();
             WritePng(Render(editor, (int)editor.ActualWidth, (int)editor.ActualHeight), Path.Combine(directory, "editor.png"));
             Check("editorLayout", editor.ActualWidth >= 950 && editor.ActualHeight >= 680);
+            CheckTrayRestore(editor, Check);
+            CheckUpdateWindow(editor, directory, Check);
             var model = (CrosshairSettings)editor.DataContext;
             ((System.Windows.Controls.Button)editor.FindName("CircleButton")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
             Pump();
@@ -141,6 +143,9 @@ internal static class Diagnostics
             WritePng(Render(editor, (int)editor.ActualWidth, (int)editor.ActualHeight), Path.Combine(directory, "editor-small.png"));
             var togglePosition = toggle.TransformToAncestor(editor).Transform(new Point(0, toggle.ActualHeight));
             Check("smallWindowButtonFits", togglePosition.Y < editor.ActualHeight - 35);
+            var updateButton = (FrameworkElement)editor.FindName("UpdateButton");
+            var updatePosition = updateButton.TransformToAncestor(editor).Transform(new Point(updateButton.ActualWidth, updateButton.ActualHeight));
+            Check("smallWindowUpdateButtonFits", updateButton.ActualWidth > 60 && updatePosition.X < editor.ActualWidth - 20 && updatePosition.Y < 120);
             ((System.Windows.Controls.ScrollViewer)editor.FindName("SettingsScroller")).ScrollToBottom();
             Pump(); editor.UpdateLayout();
             WritePng(Render(editor, (int)editor.ActualWidth, (int)editor.ActualHeight), Path.Combine(directory, "editor-position.png"));
@@ -162,6 +167,68 @@ internal static class Diagnostics
             results[name] = pass;
             if (!pass) throw new InvalidOperationException("Diagnostic failed: " + name);
         }
+    }
+
+    private static void CheckTrayRestore(MainWindow editor, Action<string, bool> check)
+    {
+        // Production editors use ShowActivated=true; WPF rejects showing a maximized
+        // window with the non-activating flag used by the earlier rendering checks.
+        editor.ShowActivated = true;
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        var tray = (System.Windows.Forms.NotifyIcon)typeof(MainWindow).GetField("tray", flags)!.GetValue(editor)!;
+        var mouseClick = typeof(System.Windows.Forms.NotifyIcon).GetMethod("OnMouseClick", flags)!;
+        void Click(System.Windows.Forms.MouseButtons button) => mouseClick.Invoke(tray, [new System.Windows.Forms.MouseEventArgs(button, 1, 0, 0, 0)]);
+        editor.Hide();
+        Click(System.Windows.Forms.MouseButtons.Right); Pump();
+        check("trayRightClickDoesNotRestore", !editor.IsVisible);
+        Click(System.Windows.Forms.MouseButtons.Left); Pump();
+        check("traySingleLeftClickRestores", editor.IsVisible && editor.WindowState == WindowState.Normal);
+        editor.WindowState = WindowState.Minimized; Pump();
+        Click(System.Windows.Forms.MouseButtons.Left); Pump();
+        check("trayClickRestoresMinimizedWindow", editor.IsVisible && editor.WindowState == WindowState.Normal);
+        editor.WindowState = WindowState.Maximized; editor.Hide();
+        Click(System.Windows.Forms.MouseButtons.Left); Pump();
+        check("trayRestorePreservesMaximizedState", editor.IsVisible && editor.WindowState == WindowState.Maximized);
+        editor.WindowState = WindowState.Normal; Pump();
+        check("trayHasUpdateEntry", tray.ContextMenuStrip!.Items.Cast<System.Windows.Forms.ToolStripItem>().Any(item => item.Text == "检查更新"));
+    }
+
+    private static void CheckUpdateWindow(MainWindow owner, string directory, Action<string, bool> check)
+    {
+        var handler = new DiagnosticUpdateHandler();
+        using var client = new System.Net.Http.HttpClient(handler);
+        var window = new UpdateWindow(new UpdateChecker(client)) { Owner = owner };
+        try
+        {
+            window.Show(); Pump(); window.UpdateLayout();
+            var status = (System.Windows.Controls.TextBlock)window.FindName("StatusText");
+            var button = (System.Windows.Controls.Button)window.FindName("CheckButton");
+            var download = (System.Windows.Controls.Button)window.FindName("DownloadButton");
+            check("updateDialogFindsNewVersion", WaitUntil(() => button.IsEnabled) && status.Text.Contains("99.0.0") && download.Content.ToString() == "前往下载");
+            WritePng(Render(window, (int)window.ActualWidth, (int)window.ActualHeight), Path.Combine(directory, "update-available.png"));
+            handler.Version = AppVersion.Current;
+            button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            check("updateDialogHandlesCurrentVersion", WaitUntil(() => button.IsEnabled) && status.Text == "当前已是最新版本" && download.Content.ToString() == "打开发布页");
+            handler.Status = System.Net.HttpStatusCode.ServiceUnavailable;
+            button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            check("updateDialogHandlesFailureAndAllowsRetry", WaitUntil(() => button.IsEnabled) && status.Text == "暂时无法检查更新" && download.IsEnabled);
+            WritePng(Render(window, (int)window.ActualWidth, (int)window.ActualHeight), Path.Combine(directory, "update-failed.png"));
+            handler.Status = System.Net.HttpStatusCode.OK;
+            button.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            check("updateDialogRetryRecovers", WaitUntil(() => button.IsEnabled) && status.Text == "当前已是最新版本");
+        }
+        finally { window.Close(); }
+    }
+
+    private sealed class DiagnosticUpdateHandler : System.Net.Http.HttpMessageHandler
+    {
+        public string Version { get; set; } = "99.0.0";
+        public System.Net.HttpStatusCode Status { get; set; } = System.Net.HttpStatusCode.OK;
+        protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, CancellationToken cancellationToken)
+            => Task.FromResult(new System.Net.Http.HttpResponseMessage(Status)
+            {
+                Content = new System.Net.Http.StringContent(JsonSerializer.Serialize(new[] { new { tag_name = "v" + Version, draft = false, prerelease = false } }))
+            });
     }
 
     private static void CheckOverlayRecovery(OverlayWindow overlay, Action<string, bool> check)
