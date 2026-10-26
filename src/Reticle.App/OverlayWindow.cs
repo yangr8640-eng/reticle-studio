@@ -36,7 +36,8 @@ public sealed class OverlayWindow : Window
         Closed += (_, _) =>
         {
             recoveryTimer.Stop();
-            HwndSource.FromHwnd(handle)?.RemoveHook(Hook);
+            // Game Bar-only sessions never create a desktop HWND.
+            if (handle != IntPtr.Zero) HwndSource.FromHwnd(handle)?.RemoveHook(Hook);
             handle = IntPtr.Zero;
         };
         SourceInitialized += (_, _) =>

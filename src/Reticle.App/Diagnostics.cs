@@ -39,6 +39,9 @@ internal static class Diagnostics
             Check("hidden", !NativeMethods.IsWindowVisible(overlay.Handle));
             overlay.SetVisible(true);
             Check("shownAgain", NativeMethods.IsWindowVisible(overlay.Handle));
+            var neverShown = new OverlayWindow(new());
+            neverShown.Close();
+            Check("neverShownOverlayClosesSafely", neverShown.Handle == IntPtr.Zero);
             CheckOverlayRecovery(overlay, Check);
             bool registered = NativeMethods.RegisterHotKey(overlay.Handle, 99, 0x4003, 0x48);
             results["hotkeyAvailable"] = registered;
@@ -67,7 +70,8 @@ internal static class Diagnostics
             editor.ShowActivated = false; editor.Show(); Pump(); editor.UpdateLayout();
             WritePng(Render(editor, (int)editor.ActualWidth, (int)editor.ActualHeight), Path.Combine(directory, "editor.png"));
             Check("editorLayout", editor.ActualWidth >= 950 && editor.ActualHeight >= 680);
-            CheckTrayRestore(editor, Check);
+            CheckTrayRestore(editor, directory, Check);
+            CheckTrayExitWithoutDesktopOverlay(directory, Check);
             CheckUpdateWindow(editor, directory, Check);
             var model = (CrosshairSettings)editor.DataContext;
             ((System.Windows.Controls.Button)editor.FindName("CircleButton")).RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
@@ -169,28 +173,100 @@ internal static class Diagnostics
         }
     }
 
-    private static void CheckTrayRestore(MainWindow editor, Action<string, bool> check)
+    private static void CheckTrayRestore(MainWindow editor, string directory, Action<string, bool> check)
     {
         // Production editors use ShowActivated=true; WPF rejects showing a maximized
         // window with the non-activating flag used by the earlier rendering checks.
         editor.ShowActivated = true;
         var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
         var tray = (System.Windows.Forms.NotifyIcon)typeof(MainWindow).GetField("tray", flags)!.GetValue(editor)!;
+        var menu = (System.Windows.Controls.ContextMenu)typeof(MainWindow).GetField("trayMenu", flags)!.GetValue(editor)!;
         var mouseClick = typeof(System.Windows.Forms.NotifyIcon).GetMethod("OnMouseClick", flags)!;
         void Click(System.Windows.Forms.MouseButtons button) => mouseClick.Invoke(tray, [new System.Windows.Forms.MouseEventArgs(button, 1, 0, 0, 0)]);
         editor.Hide();
-        Click(System.Windows.Forms.MouseButtons.Right); Pump();
-        check("trayRightClickDoesNotRestore", !editor.IsVisible);
-        Click(System.Windows.Forms.MouseButtons.Left); Pump();
-        check("traySingleLeftClickRestores", editor.IsVisible && editor.WindowState == WindowState.Normal);
-        editor.WindowState = WindowState.Minimized; Pump();
-        Click(System.Windows.Forms.MouseButtons.Left); Pump();
-        check("trayClickRestoresMinimizedWindow", editor.IsVisible && editor.WindowState == WindowState.Normal);
-        editor.WindowState = WindowState.Maximized; editor.Hide();
-        Click(System.Windows.Forms.MouseButtons.Left); Pump();
-        check("trayRestorePreservesMaximizedState", editor.IsVisible && editor.WindowState == WindowState.Maximized);
-        editor.WindowState = WindowState.Normal; Pump();
-        check("trayHasUpdateEntry", tray.ContextMenuStrip!.Items.Cast<System.Windows.Forms.ToolStripItem>().Any(item => item.Text == "检查更新"));
+        var nativeWindow = (System.Windows.Forms.NativeWindow)typeof(System.Windows.Forms.NotifyIcon).GetField("_window", flags)!.GetValue(tray)!;
+        var wndProc = typeof(System.Windows.Forms.NotifyIcon).GetMethod("WndProc", flags)!;
+        void RightClick()
+        {
+            // Follow NotifyIcon's actual native callback path, not just OnMouseClick.
+            foreach (int message in new[] { 0x204, 0x205 })
+                wndProc.Invoke(tray, [System.Windows.Forms.Message.Create(nativeWindow.Handle, 0x800, IntPtr.Zero, new IntPtr(message))]);
+            Pump();
+        }
+        var commands = menu.Items.OfType<System.Windows.Controls.MenuItem>().ToArray();
+        try
+        {
+            RightClick();
+            check("trayNativeRightClickOpensMenu", menu.IsOpen && menu.IsVisible);
+            check("trayMenuContainsAllCommands", commands.Select(item => (string)item.Header).SequenceEqual(new[] { "显示 / 隐藏准星", "显示设置", "检查更新", "退出" }));
+            check("trayMenuOpeningDoesNotRunCommand", tray.Visible && !editor.IsVisible && ((System.Windows.Controls.Button)editor.FindName("ToggleButton")).Content.ToString() == "开启桌面准星");
+            menu.UpdateLayout();
+            WritePng(Render(menu, (int)Math.Ceiling(menu.ActualWidth), (int)Math.Ceiling(menu.ActualHeight)), Path.Combine(directory, "tray-menu.png"));
+            // The release that opened a popup (or another right click) must not invoke Exit.
+            var rightRelease = new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount, System.Windows.Input.MouseButton.Right)
+            { RoutedEvent = UIElement.PreviewMouseUpEvent };
+            commands[^1].RaiseEvent(rightRelease); Pump();
+            check("trayMenuIgnoresRightReleaseOverExit", rightRelease.Handled && menu.IsOpen && tray.Visible);
+            menu.IsOpen = false; Pump();
+            check("trayMenuDismissKeepsEditorRunning", tray.Visible && !editor.IsVisible);
+            RightClick();
+            check("trayMenuCanReopenAfterDismiss", menu.IsOpen && menu.IsVisible);
+            commands[1].RaiseEvent(new RoutedEventArgs(System.Windows.Controls.MenuItem.ClickEvent)); Pump();
+            check("trayMenuSettingsRestoresEditor", editor.IsVisible && !menu.IsOpen);
+            editor.Hide(); RightClick();
+            commands[0].RaiseEvent(new RoutedEventArgs(System.Windows.Controls.MenuItem.ClickEvent)); Pump();
+            check("trayMenuToggleEnablesOverlayWithoutOpeningSettings", !editor.IsVisible && ((System.Windows.Controls.Button)editor.FindName("ToggleButton")).Content.ToString() == "关闭桌面准星");
+            RightClick();
+            commands[0].RaiseEvent(new RoutedEventArgs(System.Windows.Controls.MenuItem.ClickEvent)); Pump();
+            check("trayMenuToggleDisablesOverlay", ((System.Windows.Controls.Button)editor.FindName("ToggleButton")).Content.ToString() == "开启桌面准星");
+            RightClick();
+            commands[2].RaiseEvent(new RoutedEventArgs(System.Windows.Controls.MenuItem.ClickEvent)); Pump();
+            var updates = editor.OwnedWindows.OfType<UpdateWindow>().SingleOrDefault();
+            check("trayMenuOpensUpdates", editor.IsVisible && updates?.IsVisible == true && !menu.IsOpen);
+            updates?.Close();
+            editor.Hide();
+            Click(System.Windows.Forms.MouseButtons.Right); Pump();
+            check("trayRightClickDoesNotRestore", !editor.IsVisible);
+            menu.IsOpen = false; Pump();
+            Click(System.Windows.Forms.MouseButtons.Left); Pump();
+            check("traySingleLeftClickRestores", editor.IsVisible && editor.WindowState == WindowState.Normal);
+            editor.WindowState = WindowState.Minimized; Pump();
+            Click(System.Windows.Forms.MouseButtons.Left); Pump();
+            check("trayClickRestoresMinimizedWindow", editor.IsVisible && editor.WindowState == WindowState.Normal);
+            editor.WindowState = WindowState.Maximized; editor.Hide();
+            Click(System.Windows.Forms.MouseButtons.Left); Pump();
+            check("trayRestorePreservesMaximizedState", editor.IsVisible && editor.WindowState == WindowState.Maximized);
+            editor.WindowState = WindowState.Normal; Pump();
+            check("trayHasUpdateEntry", commands.Any(item => (string)item.Header == "检查更新"));
+            }
+        finally { menu.IsOpen = false; }
+    }
+
+    private static void CheckTrayExitWithoutDesktopOverlay(string directory, Action<string, bool> check)
+    {
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        // Fresh sessions and Game Bar-only sessions never create the desktop overlay HWND.
+        foreach (bool gameBarMode in new[] { false, true })
+        {
+            var editor = new MainWindow(new SettingsStore(Path.Combine(directory, "test-tray-exit-settings.json")));
+            try
+            {
+                editor.Show(); Pump();
+                if (gameBarMode) ((System.Windows.Controls.ComboBox)editor.FindName("OverlayModeBox")).SelectedIndex = 1;
+                editor.Hide();
+                bool closed = false;
+                editor.Closed += (_, _) => closed = true;
+                var menu = (System.Windows.Controls.ContextMenu)typeof(MainWindow).GetField("trayMenu", flags)!.GetValue(editor)!;
+                var tray = (System.Windows.Forms.NotifyIcon)typeof(MainWindow).GetField("tray", flags)!.GetValue(editor)!;
+                typeof(System.Windows.Forms.NotifyIcon).GetMethod("OnMouseClick", flags)!.Invoke(tray, [new System.Windows.Forms.MouseEventArgs(System.Windows.Forms.MouseButtons.Right, 1, 0, 0, 0)]);
+                Pump();
+                check(gameBarMode ? "gameBarOnlySessionRightClickStaysOpen" : "freshSessionRightClickStaysOpen", menu.IsOpen && !closed && tray.Visible);
+                menu.Items.OfType<System.Windows.Controls.MenuItem>().Single(item => (string)item.Header == "退出")
+                    .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.MenuItem.ClickEvent)); Pump();
+                check(gameBarMode ? "trayExitClosesGameBarOnlySessionSafely" : "trayExitClosesFreshSessionSafely", closed && !tray.Visible && !menu.IsOpen);
+            }
+            finally { editor.Close(); }
+        }
     }
 
     private static void CheckUpdateWindow(MainWindow owner, string directory, Action<string, bool> check)

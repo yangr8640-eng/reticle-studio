@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -23,6 +24,7 @@ public partial class MainWindow : Window
     private bool gameBarMode;
     private readonly Forms.NotifyIcon tray;
     private readonly System.Drawing.Icon trayIcon;
+    private readonly ContextMenu trayMenu;
     private UpdateWindow? updateWindow;
     private IntPtr handle;
     private bool overlayEnabled, ready, allowSave = true, zoomed;
@@ -48,12 +50,23 @@ public partial class MainWindow : Window
 
         trayIcon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? (System.Drawing.Icon)System.Drawing.SystemIcons.Application.Clone();
         tray = new Forms.NotifyIcon { Icon = trayIcon, Text = "Reticle Studio · 准星工具", Visible = true };
-        var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add("显示 / 隐藏准星", null, (_, _) => Dispatcher.Invoke(ToggleOverlay));
-        menu.Items.Add("打开设置", null, (_, _) => Dispatcher.Invoke(Restore));
-        menu.Items.Add("检查更新", null, (_, _) => Dispatcher.Invoke(ShowUpdates));
-        menu.Items.Add("退出", null, (_, _) => Dispatcher.Invoke(Close));
-        tray.ContextMenuStrip = menu;
+        // Use WPF input handling for the popup too. Opening a menu must never
+        // dispatch the right-button release to a command under the cursor.
+        trayMenu = new ContextMenu { Placement = PlacementMode.MousePoint, StaysOpen = false };
+        AddTrayCommand("显示 / 隐藏准星", ToggleOverlay);
+        AddTrayCommand("显示设置", Restore);
+        AddTrayCommand("检查更新", ShowUpdates);
+        trayMenu.Items.Add(new Separator());
+        AddTrayCommand("退出", Close);
+        trayMenu.Opened += (_, _) =>
+        {
+            // The editor can be hidden. Foreground the popup's HWND so clicking
+            // elsewhere dismisses it without showing or activating the editor.
+            if (PresentationSource.FromVisual(trayMenu) is HwndSource source)
+                NativeMethods.SetForegroundWindow(source.Handle);
+        };
+        trayMenu.PreviewMouseDown += (_, e) => { if (e.ChangedButton == System.Windows.Input.MouseButton.Right) e.Handled = true; };
+        trayMenu.PreviewMouseUp += (_, e) => { if (e.ChangedButton == System.Windows.Input.MouseButton.Right) e.Handled = true; };
         tray.MouseClick += Tray_MouseClick;
         tray.MouseDoubleClick += Tray_MouseClick;
         SourceInitialized += (_, _) =>
@@ -75,7 +88,9 @@ public partial class MainWindow : Window
             SystemEvents.DisplaySettingsChanged -= DisplayChanged;
             settings.PropertyChanged -= Settings_Changed;
             NativeMethods.UnregisterHotKey(handle, 1); NativeMethods.UnregisterHotKey(handle, 2);
-            overlay.Close(); tray.Visible = false; tray.ContextMenuStrip?.Dispose(); tray.Dispose(); trayIcon.Dispose();
+            trayMenu.IsOpen = false;
+            tray.Visible = false; tray.Dispose(); trayIcon.Dispose();
+            overlay.Close();
         };
     }
     private void DisplayChanged(object? sender, EventArgs e) => Dispatcher.BeginInvoke(() => { if (!ready) return; PopulateMonitors(); if (overlayEnabled) overlay.Position(); });
@@ -182,6 +197,19 @@ public partial class MainWindow : Window
         if (e.Button == Forms.MouseButtons.Left)
             // Let the shell finish handling the tray flyout before activating the editor.
             Dispatcher.BeginInvoke(() => { if (ready) Restore(); });
+        else if (e.Button == Forms.MouseButtons.Right)
+            Dispatcher.BeginInvoke(() => { if (ready) trayMenu.IsOpen = true; }, DispatcherPriority.ContextIdle);
+    }
+    private void AddTrayCommand(string text, Action command)
+    {
+        var item = new MenuItem { Header = text };
+        item.Click += (_, _) =>
+        {
+            trayMenu.IsOpen = false;
+            // Finish closing the popup before restoring windows or disposing the tray.
+            Dispatcher.BeginInvoke(() => { if (ready) command(); });
+        };
+        trayMenu.Items.Add(item);
     }
     private void Restore() { Show(); if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal; Activate(); }
     private void ShowUpdates()

@@ -6,7 +6,7 @@
 
 ## 运行
 
-最新编辑器预览版：[v0.3.0-preview.3](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.3)，修复托盘左键单击，并新增“检查更新”。全屏 Game Bar 组件继续使用 preview.2，无需重装。
+最新编辑器预览版：[v0.3.0-preview.4](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.4)，修复托盘右键菜单和退出崩溃，保留单击打开及“检查更新”。全屏 Game Bar 组件继续使用 preview.2，无需重装。
 
 **使用 v0.3.0-preview.2 的 Game Bar 模式时，CS 可以保留“全屏”，不要求改成“全屏窗口化”。** 需要安装并固定 Game Bar 准星组件、启用鼠标穿透。下载 [全屏预览版](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.2)，或查看 [完整安装指南](docs/fullscreen-gamebar.md)。v0.2.1 仍为稳定桌面版。
 
@@ -17,7 +17,7 @@
 
 **CS 菜单中的“全屏”与底层是否采用真正独占呈现是两件事。** 当前预览版没有保证“禁用全屏优化 + 真正独占全屏”仍可显示准星；若用户为降低延迟坚持这种设置，需要在其机器单独验证，不能把桌面显示成功当作兼容性保证。
 
-本地项目中双击 **`Start-Reticle.cmd`**。便携编辑器位于 `artifacts/Reticle-win-x64/Reticle.exe`，当前源码打包为 `artifacts/Reticle-v0.3.0-preview.3-win-x64.zip`。本次编辑器升级继续配合 preview.2 的全屏组件使用，组件需单独安装。
+本地项目中双击 **`Start-Reticle.cmd`**。便携编辑器位于 `artifacts/Reticle-win-x64/Reticle.exe`，当前源码打包为 `artifacts/Reticle-v0.3.0-preview.4-win-x64.zip`。本次编辑器升级继续配合 preview.2 的全屏组件使用，组件需单独安装。
 
 远程下载：[GitHub Releases](https://github.com/yangr8640-eng/reticle-studio/releases)。仓库已公开，无需登录即可查看源码与下载发行包。
 
