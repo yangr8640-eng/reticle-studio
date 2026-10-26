@@ -6,6 +6,8 @@
 
 ## 运行
 
+最新编辑器预览版：[v0.3.0-preview.3](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.3)，修复托盘左键单击，并新增“检查更新”。全屏 Game Bar 组件继续使用 preview.2，无需重装。
+
 **使用 v0.3.0-preview.2 的 Game Bar 模式时，CS 可以保留“全屏”，不要求改成“全屏窗口化”。** 需要安装并固定 Game Bar 准星组件、启用鼠标穿透。下载 [全屏预览版](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.2)，或查看 [完整安装指南](docs/fullscreen-gamebar.md)。v0.2.1 仍为稳定桌面版。
 
 | 工具版本 / 显示方式 | CS 显示模式 | 验证范围与限制 |

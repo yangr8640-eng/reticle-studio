@@ -31,7 +31,7 @@
 | v0.2.1 | 无边框全屏遮挡恢复、位置恢复与显示模式说明 | 已验证、推送并发布 |
 | v0.3.0-preview.1 | 独立 Game Bar 组件、编辑器全屏模式、配置同步 | 已发布预览版并在本机安装；CS 全屏实测待完成 |
 | v0.3.0-preview.2 | Game Bar 不透明度修复、绘制诊断及正式组件测试 | 已发布并升级本机，用户确认准星可见 |
-| v0.3.0-preview.3 | 托盘左键单击唤出、手动检查更新 | 本地验证及打包完成，已启动新版；尚未发布 GitHub |
+| v0.3.0-preview.3 | 托盘左键单击唤出、手动检查更新 | 已验证、推送并发布；本机已启动新版 |
 | 后续版本 | 实际游戏、混合 DPI 多屏验证与体验迭代 | 待进行 |
 
 ## 验证计划
@@ -132,7 +132,7 @@
 - `scripts/build.ps1 -Portable`：构建、核心检查、自包含打包。
 - `scripts/test-desktop.ps1`：独立配置下的桌面诊断。
 - `.github/workflows/build.yml`：Windows 构建与便携包工作流。
-- 稳定分支 / 远程默认分支：`codex/reticle-mvp`，最新稳定标签 `v0.2.1`。全屏预览分支：`codex/gamebar-fullscreen`，最新预览标签 `v0.3.0-preview.2`。
+- 稳定分支 / 远程默认分支：`codex/reticle-mvp`，最新稳定标签 `v0.2.1`。全屏预览分支：`codex/gamebar-fullscreen`，最新编辑器预览标签 `v0.3.0-preview.3`，Game Bar 组件沿用 `v0.3.0-preview.2`。
 - Git 提交身份使用仓库级命令参数 `Codex <codex@localhost>`，未改动用户的全局 Git 身份配置。
 
 ### 2026-10-26 · v0.3.0-preview.3 托盘与检查更新
@@ -141,7 +141,9 @@
 - 主界面和托盘菜单新增“检查更新”。按需匿名读取项目 GitHub Releases，支持正式版 / 预览版筛选、SemVer 比较、分页、15 秒超时、取消、错误重试和浏览器打开发布页，不自动下载安装。
 - 版本显示由程序集元数据生成，编辑器升为 0.3.0-preview.3，继续配合已安装的 preview.2 Game Bar 组件。
 - Release 构建 0 警告 / 0 错误；24 项核心、31 项 Game Bar 和 64 项桌面检查通过。便携版也通过 64 项桌面检查；实际点击更新按钮及切换筛选后联网成功。
-- 已生成 `artifacts/Reticle-v0.3.0-preview.3-win-x64.zip`，SHA256：`f11ff7a0aef311fc12d18ef058b507a38a8c092dcb55d7af67c6c985294c6d6d`。已正常退出旧版并启动 `artifacts/Reticle-win-x64/Reticle.exe`，读取原有外观配置。此次仅本地升级，未推送源码或发布远程版本。
+- 已生成 `artifacts/Reticle-v0.3.0-preview.3-win-x64.zip`，SHA256：`f11ff7a0aef311fc12d18ef058b507a38a8c092dcb55d7af67c6c985294c6d6d`。已正常退出旧版并启动 `artifacts/Reticle-win-x64/Reticle.exe`，读取原有外观配置。
+- 按用户要求推送源码提交 `2d54ac1` 和 `v0.3.0-preview.3` 标签，并发布 [preview.3 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.3)。未登录 API 已确认公开可见，便携 ZIP 及 SHA256 文件两个附件的远端摘要与本地一致；正式版仍为 v0.2.1。
+- GitHub Windows 的[分支构建](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40325388702)及[标签构建](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40325389277)均已成功，包含编译、核心及 Game Bar 协议检查、便携打包和产物上传。
 
 ## 待确认 / 待办
 

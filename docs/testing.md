@@ -10,6 +10,8 @@
 - 已查看最小窗口、发现新版和错误提示的渲染图。诊断截图与报告位于 `artifacts/diagnostics/` 和 `artifacts/portable-diagnostics/`；模拟新版使用 v99.0.0，不代表线上存在该版本。
 - 正常退出旧版后启动新便携版，实际点击“检查更新”和“包含预览版”验证 GitHub 联网，均正确报告没有比当前本地版更新的版本。原外观配置读取正常，快捷键注册成功。
 - 托盘回归覆盖事件到窗口恢复的调用链；本次自动化工具未提供任务栏溢出面板，未完成该面板真实鼠标单击的端到端验证。Game Bar 包未重装，CS 游戏内兼容性验证范围沿用之前记录。
+- 已推送源码 `2d54ac1` 与版本标签，并发布 [preview.3 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.3)。公开 API 验证预览版可访问，两个附件的摘要与本地一致；ZIP 内程序与通过便携诊断的程序逐字节一致。
+- GitHub Windows 分支 / 标签构建均成功：[标签构建](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40325389277)。包含 Release 编译、24 项核心和 31 项 Game Bar 检查、自包含打包及产物上传。
 
 ## v0.3.0-preview.2 · Game Bar 准星几乎不可见
 
