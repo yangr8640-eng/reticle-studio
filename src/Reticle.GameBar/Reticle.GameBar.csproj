@@ -51,7 +51,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Gaming.XboxGameBar" Version="7.2.240903001" />
-    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.2.15" />
+    <!-- 6.2.15's native framework package declares a higher dependency version than its bundled APPX. -->
+    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform" Version="6.2.14" />
   </ItemGroup>
   <PropertyGroup Condition="'$(VisualStudioVersion)' == ''"><VisualStudioVersion>17.0</VisualStudioVersion></PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
