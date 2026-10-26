@@ -29,7 +29,7 @@
 | v0.1.0 | 三类准星、中文编辑器、覆盖层、预设、持久化、便携包 | 已实现、验证并推送 GitHub |
 | v0.2.0 | 可视化调色盘、色相 / 饱和度 / 明度、HEX 与预设联动 | 已验证、推送并发布 |
 | v0.2.1 | 无边框全屏遮挡恢复、位置恢复与显示模式说明 | 已验证、推送并发布 |
-| v0.3.0-preview.1 | 独立 Game Bar 组件、编辑器全屏模式、配置同步 | 已构建并在本机安装；CS 全屏实测待完成 |
+| v0.3.0-preview.1 | 独立 Game Bar 组件、编辑器全屏模式、配置同步 | 已发布预览版并在本机安装；CS 全屏实测待完成 |
 | 后续版本 | 实际游戏、混合 DPI 多屏验证与体验迭代 | 待进行 |
 
 ## 验证计划
@@ -114,13 +114,15 @@
 - 已按用户授权安装测试证书与组件；Game Bar 激活后组件进程运行，编辑器的实际配置与开关写入组件目录并持续更新心跳。自动化接口未暴露 Game Bar 覆盖窗口，透明 / 固定 / 穿透及实际 CS 仍待人工确认。
 - 安装器跳过当前用户已安装且版本满足的框架，避免无谓更新系统依赖导致 `0x80073D02`。最终包保留 CI 编译的 APPX，仅更新并重新校验安装脚本后封装。
 - 编辑器 ZIP SHA256：`d21d975e998ad178732fb76d4df267295cd95fc54c32caa22001ac7817e1fe22`；Game Bar ZIP SHA256：`e31b4e540109bc045911f257eb8031481986ae75ceb9defb6f552b01233e2e8b`。公开测试证书指纹：`BB99DCBD62D263A7C7732AF8D29117F26C41754A`。
+- 已推送 `codex/gamebar-fullscreen` 和 `v0.3.0-preview.1` 标签并发布 [全屏预览 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.1)，包含两个 ZIP、两个 SHA256 文件及公开签名信息。五个远端附件摘要均与本地一致，GitHub 最新正式版仍为 v0.2.1。
+- 最终提交 `ba516df` 的分支与标签构建均成功：[Game Bar 标签构建](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40311213334)、[桌面标签构建](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40311213357)。
 
 - `README.md`：使用说明、快捷键、参数含义和构建方法。
 - `docs/testing.md`：验证结果与尚未覆盖的场景。
 - `scripts/build.ps1 -Portable`：构建、核心检查、自包含打包。
 - `scripts/test-desktop.ps1`：独立配置下的桌面诊断。
 - `.github/workflows/build.yml`：Windows 构建与便携包工作流。
-- Git 工作分支 / 远程默认分支：`codex/reticle-mvp`；标签：`v0.0.1`、`v0.1.0`、`v0.2.0`、`v0.2.1`。
+- 稳定分支 / 远程默认分支：`codex/reticle-mvp`，最新稳定标签 `v0.2.1`。全屏预览分支：`codex/gamebar-fullscreen`，标签 `v0.3.0-preview.1`。
 - Git 提交身份使用仓库级命令参数 `Codex <codex@localhost>`，未改动用户的全局 Git 身份配置。
 
 ## 待确认 / 待办
