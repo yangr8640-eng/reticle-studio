@@ -162,8 +162,11 @@
 - 将独立覆盖版整理为独立分支、独立版本号、完整发行包和更新通道；个人配置使用 `ReticleStudio/Independent`，与桌面 / Game Bar 系列分开。
 - 新增图形安装入口，安装时可选桌面快捷方式；完整安装编辑器及 UIAccess 组件到 Program Files，桌面快捷方式不依赖解压目录。升级采用双目录回滚，卸载核对自有快捷方式后再移除。
 - 保留 Windows PowerShell 5.1 中文系统原生 SID 权限修复，新增证书指纹从图形界面到提权安装器的绑定，证书信任必须明确选择。
-- 更新 README 和独立版详细指南，包含下载、解压、图形 / 命令安装、快捷方式、运行、FSO 设置、更新、卸载与排障。独立版计划发布为 `v0.3.0-independent.1`，其他版本仍各自保留。
-- 预发布检查覆盖 35 项核心 / 协议与更新通道、31 项 Game Bar 回归、16 项独立进程边界、17 项安装器及 10 项图形安装前端；快捷方式使用临时目录真实创建并核对，没有改写用户桌面或现有安装。
+- 更新 README 和独立版详细指南，包含下载、解压、图形 / 命令安装、快捷方式、运行、FSO 设置、更新、卸载与排障。独立版已发布为 [v0.3.0-independent.1](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.1)，其他版本仍各自保留。
+- 发布检查覆盖 35 项核心 / 协议与更新通道、31 项 Game Bar 回归、16 项独立进程边界、19 项安装器及 10 项图形安装前端；桌面诊断 86 项通过。快捷方式使用临时目录真实创建并核对，没有改写用户桌面或现有安装。
+- 中文快捷方式改用原生 IShellLinkW / IPersistFile，修复英文 Windows 上 WScript.Shell 保存中文文件名失败；Windows PowerShell 5.1 / 7 的 STA / MTA 组合及 GitHub 全新 Windows 环境均通过。
+- 发布标签指向 `643347365f2078f13363696a4778af739683608d`；分支与标签的独立 CI 均成功：[分支检查](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40353177614)、[标签检查](https://github.com/yangr8640-eng/reticle-studio/actions/runs/40353930142)。
+- 完整 ZIP SHA256 `60161e6961a4f0003332a070aa71ba6de6a0fa2904c1ba7f8a4026bc88d9022b`，签名证书指纹 `B0DD552ED3982E23EBB966ECEDC2C9B40AE2DD0B`。ZIP、摘要、签名信息和公开 CER 四个附件均已核对 GitHub 远端 digest；匿名下载返回 HTTP 200。默认分支仅更新 README 与两份指南，最新稳定版仍为 v0.2.1。
 
 - 2026-10-26 安装脚本修订 2：修复中文 Windows 应用程序包账户的 SID 名称转换异常，直接读取原生 SID；Windows PowerShell 5.1 与 PowerShell 7 各通过 8 项 ACL 回归检查。已更新用户当前内层解压包及 preview.5 ZIP，沿用原签名证书。
 
