@@ -1,6 +1,6 @@
 # Reticle Studio 独立覆盖版 · 完整安装与使用指南
 
-版本：**v0.3.0-independent.1**。本系列通过单独的 Windows UIAccess 覆盖进程显示准星，目标是在 **CS 保持全屏、Windows 全屏优化开启**时使用，无需 Game Bar。
+版本：**v0.3.0-independent.1，安装器修订 4（2026-10-28）**。本系列通过单独的 Windows UIAccess 覆盖进程显示准星，目标是在 **CS 保持全屏、Windows 全屏优化开启**时使用，无需 Game Bar。
 
 这是一个可以单独下载安装的完整发行包，包含中文编辑器、独立覆盖组件、.NET 运行时、安装/卸载工具和公开签名证书。使用者无需安装 .NET SDK、旧版 Reticle 或 Xbox Game Bar。
 
@@ -11,10 +11,12 @@
 打开 [v0.3.0-independent.1 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.1)，在 **Assets** 中下载：
 
 ```text
-Reticle-Independent-v0.3.0-independent.1-win-x64.zip
+Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip
 ```
 
-直接下载：[完整 Windows x64 安装包](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.1/Reticle-Independent-v0.3.0-independent.1-win-x64.zip)。同页的 `.sha256` 文件用于核对 ZIP 摘要。
+直接下载：[完整 Windows x64 安装包 · 安装器修订 4](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.1/Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip)。[对应的 `.sha256` 文件](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.1/Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip.sha256)用于核对 ZIP 摘要。
+
+修订 4 修复 Windows PowerShell 5.1 下双击 CMD 后的 `GetFullPath` 路径格式错误。请优先选择文件名含 `installer-fix` 的 ZIP；原 ZIP 保留用于历史记录。
 
 **不要将 GitHub 自动生成的 Source code (zip/tar.gz) 当作程序安装包。** 源码压缩包需要开发环境编译，没有可直接供普通用户安装的完整运行时与签名组件。
 
@@ -24,11 +26,12 @@ Reticle-Independent-v0.3.0-independent.1-win-x64.zip
 
 下载完成后，右键 ZIP →“属性”，若有**“解除锁定”**选项，勾选并应用，再将 ZIP 解压到一个**新的空目录**。这样可以避免下载来源标记继续附着到解压后的脚本。
 
-ZIP 自带 `Reticle-Independent-v0.3.0-independent.1-win-x64` 根目录，进入同时包含以下文件的那一层：
+ZIP 自带 `Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64` 根目录，进入同时包含以下文件的那一层：
 
 ```text
-Reticle-Independent-v0.3.0-independent.1-win-x64/
+Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64/
 ├─ Setup-Independent.cmd          图形安装入口
+├─ setup-independent.ps1          图形安装脚本
 ├─ install-independent.ps1        命令行安装器
 ├─ uninstall-independent.ps1      卸载器
 ├─ Start-Reticle.cmd              启动入口
@@ -62,13 +65,13 @@ Reticle-Independent-v0.3.0-independent.1-win-x64/
 例如，把下面路径替换为自己电脑上实际的解压位置：
 
 ```powershell
-Set-Location -LiteralPath 'D:\Downloads\Reticle-Independent-v0.3.0-independent.1-win-x64'
+Set-Location -LiteralPath 'D:\Downloads\Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64'
 ```
 
 也可以在资源管理器中复制脚本完整路径，使用 PowerShell 调用运算符 `&`：
 
 ```powershell
-& 'D:\Downloads\Reticle-Independent-v0.3.0-independent.1-win-x64\install-independent.ps1' -TrustPreviewCertificate -CreateDesktopShortcut
+& 'D:\Downloads\Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64\install-independent.ps1' -TrustPreviewCertificate -CreateDesktopShortcut
 ```
 
 上面 `D:\Downloads\...` 是示例，不是程序要求的固定目录。路径有空格或中文时，保留引号。
@@ -213,6 +216,7 @@ C:\Program Files\Reticle Studio\OverlayHost\Reticle.OverlayHost.exe
 | 问题 / 提示 | 原因与处理 |
 | --- | --- |
 | `.\install-independent.ps1` 不是命令或文件 | 当前目录不对。先 `Set-Location` 到包目录，或用 `& '完整路径\install-independent.ps1'`；管理员窗口默认的 System32 不是包目录 |
+| 双击 CMD 后 `GetFullPath` 提示“路径的形式不合法” | 旧安装脚本在 Windows PowerShell 5.1 的 `-File` 入口未取得默认包目录；安装脚本修订 4 已修复。旧包可使用下方命令显式传入目录 |
 | 脚本来自 Internet / RemoteSigned 阻止执行 | 核对来源和摘要，对原 ZIP 属性“解除锁定”后重新解压到空目录；图形入口不会忽略 Internet 下载标记，也不更改全局执行策略 |
 | `Unlisted files found in package` | 重复解压或多出文件。解压到新空目录，进入实际包含清单、脚本、`editor`、`host` 的目录，保持包完整 |
 | SHA256 不一致 / 文件缺失 | 重新从官方 Release 下载完整 ZIP 并核对摘要，再解压到空目录 |
@@ -225,6 +229,14 @@ C:\Program Files\Reticle Studio\OverlayHost\Reticle.OverlayHost.exe
 | UIAccess 未取得 / 握手失败 | 核对安装成功、签名受信任及受保护目录；重新安装完整同版本包，并记录完整错误 |
 | 快捷方式没有出现 | 安装时选择创建或带 `-CreateDesktopShortcut`；共享桌面可能被 Windows“显示桌面图标”设置隐藏 |
 | 已开启但游戏中不可见 | 核对显示方式、CS 全屏、全屏优化、显示器、透明度和偏移；记录 Windows 版本、显卡驱动、分辨率、HDR、渲染接口和状态文字 |
+
+旧包遇到上述 `GetFullPath` 错误时，在实际包含 `setup-independent.ps1` 的目录中打开 PowerShell，运行：
+
+```powershell
+powershell.exe -NoProfile -STA -ExecutionPolicy RemoteSigned -File .\setup-independent.ps1 -PackageDirectory $PWD.Path
+```
+
+该命令显式指定当前包目录并打开图形安装器，之后按界面选择安装选项。中文目录和同名嵌套目录本身不会引起这次错误；无需修改包内脚本或清单。
 
 安装或权限错误不应通过关闭签名验证、禁用防护或绕过反作弊处理。请将错误文字与环境信息作为排查依据。
 

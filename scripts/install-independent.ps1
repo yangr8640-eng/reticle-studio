@@ -1,8 +1,10 @@
 [CmdletBinding()]
-param([string]$PackageDirectory = $PSScriptRoot, [switch]$VerifyOnly, [switch]$TrustPreviewCertificate, [switch]$CreateDesktopShortcut, [string]$ExpectedCertificateThumbprint = '')
+param([string]$PackageDirectory = '', [switch]$VerifyOnly, [switch]$TrustPreviewCertificate, [switch]$CreateDesktopShortcut, [string]$ExpectedCertificateThumbprint = '')
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+# Windows PowerShell 5.1 -File binds parameter defaults before PSScriptRoot is set.
+if (-not $PSBoundParameters.ContainsKey('PackageDirectory')) { $PackageDirectory = $PSScriptRoot }
 if ($env:OS -ne 'Windows_NT' -or -not [Environment]::Is64BitProcess) { throw 'Use a 64-bit Windows PowerShell on Windows 10/11.' }
 if ($VerifyOnly -and ($TrustPreviewCertificate -or $CreateDesktopShortcut)) { throw '-VerifyOnly cannot be combined with installation options.' }
 if ($ExpectedCertificateThumbprint -and $ExpectedCertificateThumbprint -notmatch '\A[a-fA-F0-9]{40}\z') { throw 'Expected certificate thumbprint must be exactly 40 hexadecimal characters.' }

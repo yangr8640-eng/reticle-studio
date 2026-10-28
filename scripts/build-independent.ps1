@@ -7,6 +7,7 @@ if ($env:OS -ne 'Windows_NT' -or -not [Environment]::Is64BitProcess) { throw 'Bu
 & (Join-Path $PSScriptRoot 'test-independent-installer.ps1')
 & (Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe') -NoProfile -STA -File (Join-Path $PSScriptRoot 'test-independent-setup.ps1')
 if ($LASTEXITCODE -ne 0) { throw 'Graphical installer checks failed.' }
+& (Join-Path $PSScriptRoot 'test-independent-entrypoints.ps1')
 $root = [IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
 $artifacts = Join-Path $root 'artifacts'
 if (-not $DotnetPath) {
@@ -79,7 +80,7 @@ driver settings are changed by this package.
         [ordered]@{ path=$_.FullName.Substring($payload.Length + 1).Replace('\','/'); sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() }
     })
     [ordered]@{
-        schemaVersion=1; identity='ReticleStudio.IndependentOverlay'; version=$version; installerRevision=3
+        schemaVersion=1; identity='ReticleStudio.IndependentOverlay'; version=$version; installerRevision=4
         hostExecutable='host/Reticle.OverlayHost.exe'; editorExecutable='editor/Reticle.exe'
         certificate=$certificateName; certificateThumbprint=$certificate.Thumbprint
         certificateSubject=$certificate.Subject; previewCertificate=($null -ne $temporaryCertificate)

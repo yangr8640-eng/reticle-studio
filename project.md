@@ -187,3 +187,11 @@
 - [x] 创建或连接 GitHub 仓库并推送。
 - [x] 确认可用的 WhatsApp 收件对象，并在遇到同步问题时成功联系。
 - [ ] 在实际游戏中验证显示模式、不同 DPI 和多屏效果。
+
+### 2026-10-28 · 修复独立版双击安装入口
+
+- 复现用户报告的 `setup-independent.ps1` / `GetFullPath` 路径格式异常：Windows PowerShell 5.1 的 `-File` 参数绑定阶段无法取得默认 `$PSScriptRoot`。图形前端与命令安装器均改为在脚本主体补上默认目录，安装脚本修订升至 4。
+- 新增真实 PowerShell / CMD 入口回归，覆盖中文、空格、特殊字符、同名嵌套目录、无关工作目录及显式路径。27 项检查在 PowerShell 5.1 / 7 下均通过；既有 10 项图形前端、19 项安装器检查在两个版本中均通过。已接入独立构建脚本。
+- 生成完整修复 ZIP `artifacts/Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip`，沿用原证书及签名程序；482 个 payload 和两个真实只读安装入口校验通过。同步包内安装指南后，最终 SHA256 为 `9dfb899fc4284b849c4971b08ad8b52e08efd73b69eb40c63b2ff2587f8c1363`。原版包保留。
+- 排障文档补充旧包显式指定目录的临时启动命令，并通过只读检查验证。未执行实际安装或更改本机证书信任。
+- 已将修复 ZIP、对应摘要和签名信息上传至 [v0.3.0-independent.1 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.1)，三份新附件的 GitHub digest 均与本地一致；发布说明明确推荐安装器修订 4。

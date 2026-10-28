@@ -12,11 +12,13 @@
 
 | 系列 | 下载入口 | 适用方式 | 安装要求 |
 | --- | --- | --- | --- |
-| **独立覆盖版 v0.3.0-independent.1** | [独立版 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.1) · [完整 ZIP](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.1/Reticle-Independent-v0.3.0-independent.1-win-x64.zip) | “全屏 · 独立覆盖（实验）”，目标为 CS 全屏且全屏优化开启 | 一个 ZIP 包含编辑器、组件、.NET 运行时和安装工具；首次安装需管理员权限及明确的预览证书信任操作 |
+| **独立覆盖版 v0.3.0-independent.1** | [独立版 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.1) · [完整 ZIP · 安装器修订 4](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.1/Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip) | “全屏 · 独立覆盖（实验）”，目标为 CS 全屏且全屏优化开启 | 一个 ZIP 包含编辑器、组件、.NET 运行时和安装工具；首次安装需管理员权限及明确的预览证书信任操作 |
 | 稳定桌面版 v0.2.1 | [稳定版 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.2.1) | 全屏窗口化 / 无边框 / 窗口化 | 解压运行编辑器 |
 | Game Bar 预览版 | [编辑器 preview.4](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.4) ＋ [组件 preview.2](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.2) | “全屏 · Game Bar（实验）” | 安装并固定 Game Bar 小组件、开启鼠标穿透 |
 
 普通用户下载 Release 页面 **Assets** 中的程序 ZIP。GitHub 自动生成的 **Source code (zip/tar.gz)** 是源码，需要开发环境构建，不能代替完整安装包。查看全部发行包：[GitHub Releases](https://github.com/yangr8640-eng/reticle-studio/releases)。
+
+**请优先下载文件名含 `installer-fix` 的安装器修订 4（2026-10-28）**：修复 Windows PowerShell 5.1 下双击 CMD 后出现 `GetFullPath`“路径的形式不合法”的问题。程序版本仍为 v0.3.0-independent.1；旧 ZIP 保留在原 Release 中。[修复包 SHA-256](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.1/Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip.sha256) 可用于核对下载文件。
 
 独立版源码分支：[codex/independent-overlay](https://github.com/yangr8640-eng/reticle-studio/tree/codex/independent-overlay)。它的程序、配置和更新系列与旧版分开，不会要求先安装其他 Reticle 版本。
 
@@ -30,10 +32,11 @@
 
 需要 **Windows 10/11 x64**、管理员安装权限。运行时已经包含在包中，使用者无需安装 .NET SDK，也无需先装稳定版、Game Bar 版或 Xbox Game Bar。
 
-下载 `Reticle-Independent-v0.3.0-independent.1-win-x64.zip`，先在 ZIP 的“属性”中选择“解除锁定”（若有此选项），再解压到一个新的空目录。ZIP 自带一层同名根目录；进入同时包含以下内容的那一层：
+下载 `Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip`，先在 ZIP 的“属性”中选择“解除锁定”（若有此选项），再解压到一个新的空目录。ZIP 自带一层同名根目录；进入同时包含以下内容的那一层：
 
 ```text
 Setup-Independent.cmd
+setup-independent.ps1
 install-independent.ps1
 Start-Reticle.cmd
 package-files.json
@@ -150,11 +153,20 @@ CS 视频设置选择 **全屏**。退出 CS 后，在实际 `cs2.exe` 的“属
 | 现象 | 处理 |
 | --- | --- |
 | `CommandNotFoundException`，找不到 `.\install-independent.ps1` | 当前目录可能是 `C:\Windows\System32`。先进入包目录，或用 `& '完整脚本路径'`；详见独立指南 |
+| 双击 CMD 后 `GetFullPath` 提示“路径的形式不合法” | 下载上方安装器修订 4，重新解压到新目录；旧包可按下方命令显式指定包目录启动 |
 | `Unlisted files found in package` | 包被重复解压或混入其他文件。重新解压到新空目录，进入同时有脚本、`editor`、`host` 和清单的那一层 |
 | 显示需要信任证书 | 核对本包公开证书信息；首次预览安装需明确选择信任或使用 `-TrustPreviewCertificate` |
 | 找不到组件 / UIAccess 未授予 | 完整安装组件，保留正常签名、受保护安装目录及 UAC 设置；记录完整错误 |
 | 桌面快捷方式不可见 | 安装时选择创建选项；该快捷方式在所有用户桌面，也可从已安装编辑器路径启动 |
 | 显示已开启，游戏里不可见 | 核对独立模式、CS 全屏、全屏优化、显示器、透明度和偏移，再记录 Windows / 显卡 / 渲染接口供排查 |
+
+旧包的临时启动方式：在包含 `setup-independent.ps1` 的目录中打开 PowerShell，执行：
+
+```powershell
+powershell.exe -NoProfile -STA -ExecutionPolicy RemoteSigned -File .\setup-independent.ps1 -PackageDirectory $PWD.Path
+```
+
+随后按图形安装界面选择选项并完成安装。修订 4 可直接双击 `Setup-Independent.cmd`。
 
 ## 开发与验证
 

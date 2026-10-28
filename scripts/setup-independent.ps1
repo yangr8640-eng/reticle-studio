@@ -1,6 +1,6 @@
 ﻿[CmdletBinding()]
 param(
-    [string]$PackageDirectory = $PSScriptRoot,
+    [string]$PackageDirectory = '',
     [switch]$InspectOnly,
     [switch]$InstallWorker,
     [string]$ResultPath = '',
@@ -11,6 +11,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+# Windows PowerShell 5.1 -File binds parameter defaults before PSScriptRoot is set.
+# Resolve the omitted directory in the script body, where its value is available.
+if (-not $PSBoundParameters.ContainsKey('PackageDirectory')) { $PackageDirectory = $PSScriptRoot }
 
 function ConvertTo-ProcessArgument([string]$Value) {
     if ($Value.Length -gt 0 -and $Value -notmatch '[\s"]') { return $Value }

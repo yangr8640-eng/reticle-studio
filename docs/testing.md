@@ -143,3 +143,13 @@
 - 本次未执行签名安装后的真实 UIAccess 窗口显示，也未执行 CS 全屏 / FSO / MPO / HDR / 可变刷新率 / 输入延迟验证；这些步骤交由用户完成。
 - 最终 preview.5 测试包核验 480 个文件通过；包内自带运行时的编辑器同样通过 84 项桌面检查，报告位于 `artifacts/independent-editor-diagnostics/results.json`。签名检查只剩精确的预览根不受信任状态 `CERT_E_UNTRUSTEDROOT`；安装时需用户明确选择信任本次证书。
 - preview.5 安装脚本修订 2：修复中文 Windows 的应用程序包权限账户名称无法反向转换 SID 导致安装失败。权限检查改为直接读取安全描述符的 SID，并保留未知写入账户拒绝；Windows PowerShell 5.1 / PowerShell 7 各通过 8 项只读 ACL 回归检查，含真实 Program Files ACL、未知 SID、应用程序包 SID、GenericWrite / GenericAll 和非预期所有者。
+
+## 2026-10-28 · 独立版安装入口修订 4
+
+复现双击 CMD 后的 `GetFullPath` 路径格式异常：Windows PowerShell 5.1 经 `-File` 启动时，参数默认表达式中的 `$PSScriptRoot` 为空。图形前端和命令行安装器改为在脚本主体补上省略的包目录；显式 `-PackageDirectory` 仍按调用者指定的值处理。
+
+- 新增 `scripts/test-independent-entrypoints.ps1`，在独立构建打包前执行。实际启动 PowerShell 5.1 / 7 子进程，从无关工作目录运行两个真实脚本，覆盖默认目录、位于包外的脚本显式指定目录、中文空格及 `[] &` 路径、双层同名目录，以及真实 CMD 启动器的路径、64 位和 STA 参数。
+- 新增的 27 项检查分别由 PowerShell 5.1 和 7 启动运行，均通过；旧提交脚本在首项真实 `-File` 检查中按预期复现错误。既有图形前端 10 项及安装器 19 项检查在两个版本中均通过。
+- 修复包 `Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip` 的两个真实 `-File` 只读入口通过；ZIP 中 482 个 payload 摘要全部匹配修订 4 清单。沿用原证书与已签名程序，更新包内安装指南后，最终 ZIP SHA256 为 `9dfb899fc4284b849c4971b08ad8b52e08efd73b69eb40c63b2ff2587f8c1363`。
+- 旧包显式指定目录的图形入口命令经 `-InspectOnly` 验证通过。此次检查未执行实际安装或游戏验证。
+- 修复 ZIP、`.sha256` 和 `-signing.json` 已上传至原独立版 Release，三份新附件的 GitHub SHA-256 digest 均与本地一致。
