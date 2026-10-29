@@ -1,22 +1,22 @@
 # Reticle Studio 独立覆盖版 · 完整安装与使用指南
 
-版本：**v0.3.0-independent.1，安装器修订 4（2026-10-28）**。本系列通过单独的 Windows UIAccess 覆盖进程显示准星，目标是在 **CS 保持全屏、Windows 全屏优化开启**时使用，无需 Game Bar。
+版本：**v0.3.0-independent.2（2026-10-29），包含安装器修订 4**。本系列通过单独的 Windows UIAccess 覆盖进程显示准星，目标是在 **CS 保持全屏、Windows 全屏优化开启**时使用，无需 Game Bar。
 
 这是一个可以单独下载安装的完整发行包，包含中文编辑器、独立覆盖组件、.NET 运行时、安装/卸载工具和公开签名证书。使用者无需安装 .NET SDK、旧版 Reticle 或 Xbox Game Bar。
 
-独立系列使用 `independent` 版本号、[独立源码分支](https://github.com/yangr8640-eng/reticle-studio/tree/codex/independent-overlay)、[独立 Release 页面](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.1)、配置目录和更新系列。实际游戏兼容性取决于 Windows、显卡驱动及呈现设置，不能仅凭权限与桌面检查判定 CS 已经兼容。
+独立系列使用 `independent` 版本号、[独立源码分支](https://github.com/yangr8640-eng/reticle-studio/tree/codex/independent-overlay)、[独立 Release 页面](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.2)、配置目录和更新系列。实际游戏兼容性取决于 Windows、显卡驱动及呈现设置，不能仅凭权限与桌面检查判定 CS 已经兼容。
 
 ## 一、下载正确附件
 
-打开 [v0.3.0-independent.1 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.1)，在 **Assets** 中下载：
+打开 [v0.3.0-independent.2 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.2)，在 **Assets** 中下载：
 
 ```text
-Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip
+Reticle-Independent-v0.3.0-independent.2-win-x64.zip
 ```
 
-直接下载：[完整 Windows x64 安装包 · 安装器修订 4](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.1/Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip)。[对应的 `.sha256` 文件](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.1/Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip.sha256)用于核对 ZIP 摘要。
+直接下载：[完整 Windows x64 安装包 · 安装器修订 4](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.2/Reticle-Independent-v0.3.0-independent.2-win-x64.zip)。[对应的 `.sha256` 文件](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.2/Reticle-Independent-v0.3.0-independent.2-win-x64.zip.sha256)用于核对 ZIP 摘要。
 
-修订 4 修复 Windows PowerShell 5.1 下双击 CMD 后的 `GetFullPath` 路径格式错误。请优先选择文件名含 `installer-fix` 的 ZIP；原 ZIP 保留用于历史记录。
+本版修复不透明度 100% 时细线仍偏淡的问题：准星采用硬边像素绘制，斜线和圆环会有像素阶梯，小中心点保证可见。仍包含安装器修订 4，修复 Windows PowerShell 5.1 下双击 CMD 后的 `GetFullPath` 路径格式错误，无需另行下载旧版的 installer-fix 包。
 
 **不要将 GitHub 自动生成的 Source code (zip/tar.gz) 当作程序安装包。** 源码压缩包需要开发环境编译，没有可直接供普通用户安装的完整运行时与签名组件。
 
@@ -26,10 +26,10 @@ Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip
 
 下载完成后，右键 ZIP →“属性”，若有**“解除锁定”**选项，勾选并应用，再将 ZIP 解压到一个**新的空目录**。这样可以避免下载来源标记继续附着到解压后的脚本。
 
-ZIP 自带 `Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64` 根目录，进入同时包含以下文件的那一层：
+ZIP 自带 `Reticle-Independent-v0.3.0-independent.2-win-x64` 根目录，进入同时包含以下文件的那一层：
 
 ```text
-Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64/
+Reticle-Independent-v0.3.0-independent.2-win-x64/
 ├─ Setup-Independent.cmd          图形安装入口
 ├─ setup-independent.ps1          图形安装脚本
 ├─ install-independent.ps1        命令行安装器
@@ -65,13 +65,13 @@ Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64/
 例如，把下面路径替换为自己电脑上实际的解压位置：
 
 ```powershell
-Set-Location -LiteralPath 'D:\Downloads\Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64'
+Set-Location -LiteralPath 'D:\Downloads\Reticle-Independent-v0.3.0-independent.2-win-x64'
 ```
 
 也可以在资源管理器中复制脚本完整路径，使用 PowerShell 调用运算符 `&`：
 
 ```powershell
-& 'D:\Downloads\Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64\install-independent.ps1' -TrustPreviewCertificate -CreateDesktopShortcut
+& 'D:\Downloads\Reticle-Independent-v0.3.0-independent.2-win-x64\install-independent.ps1' -TrustPreviewCertificate -CreateDesktopShortcut
 ```
 
 上面 `D:\Downloads\...` 是示例，不是程序要求的固定目录。路径有空格或中文时，保留引号。

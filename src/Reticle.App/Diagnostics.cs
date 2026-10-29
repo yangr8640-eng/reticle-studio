@@ -48,6 +48,7 @@ internal static class Diagnostics
             if (registered) NativeMethods.UnregisterHotKey(overlay.Handle, 99);
             overlay.Hide();
 
+            OpacityDiagnostics.Run(directory, Check);
             foreach (var shape in Enum.GetValues<CrosshairShape>())
             {
                 settings = new CrosshairSettings { Shape = shape, Outline = false };

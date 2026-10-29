@@ -7,6 +7,13 @@ namespace Reticle.App;
 
 public sealed class CrosshairView : FrameworkElement
 {
+    public CrosshairView()
+    {
+        // Antialiasing spreads a 1 px stroke over translucent pixels even at 100%.
+        // Apply hard edges only to the reticle, including the shared UIAccess host.
+        RenderOptions.SetEdgeMode(this, EdgeMode.Aliased);
+    }
+
     public static readonly DependencyProperty SettingsProperty = DependencyProperty.Register(nameof(Settings), typeof(CrosshairSettings), typeof(CrosshairView), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender, Changed));
     public CrosshairSettings? Settings { get => (CrosshairSettings?)GetValue(SettingsProperty); set => SetValue(SettingsProperty, value); }
     public double Zoom { get; set; } = 1;
@@ -40,7 +47,15 @@ public sealed class CrosshairView : FrameworkElement
         }
         if (s.Shape == CrosshairShape.Circle) dc.DrawEllipse(null, pen, new Point(), s.Radius, s.Radius);
         else foreach (var a in arms) dc.DrawLine(pen, new Point(a.X1, a.Y1), new Point(a.X2, a.Y2));
-        if (s.CenterDot) dc.DrawEllipse(brush, null, new Point(), s.DotSize / 2, s.DotSize / 2);
+        if (s.CenterDot)
+        {
+            double deviceDotSize = s.DotSize * Zoom * (PhysicalPixels ? 1 : Math.Min(dpi.DpiScaleX, dpi.DpiScaleY));
+            // A tiny aliased circle centered between pixel centers can disappear.
+            // Below 2 device pixels a filled square preserves the visible center dot.
+            if (deviceDotSize < 2)
+                dc.DrawRectangle(brush, null, new Rect(-s.DotSize / 2, -s.DotSize / 2, s.DotSize, s.DotSize));
+            else dc.DrawEllipse(brush, null, new Point(), s.DotSize / 2, s.DotSize / 2);
+        }
         dc.Pop(); dc.Pop(); dc.Pop();
     }
 }

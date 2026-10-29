@@ -2,7 +2,7 @@
 
 在 Windows 上制作自己的 FPS 准星：十字、斜十字、圆环、中心点、描边、颜色、透明度和位置都可以调整，中文编辑器实时预览。
 
-**独立覆盖版 v0.3.0-independent.1** 提供完整安装包，通过单独的 Windows UIAccess 组件显示准星，面向 **CS 全屏、Windows 全屏优化开启**的使用场景，无需安装 Xbox Game Bar 或旧版 Reticle。安装时可以选择创建桌面快捷方式。
+**独立覆盖版 v0.3.0-independent.2** 提供完整安装包，通过单独的 Windows UIAccess 组件显示准星，面向 **CS 全屏、Windows 全屏优化开启**的使用场景，无需安装 Xbox Game Bar 或旧版 Reticle。安装时可以选择创建桌面快捷方式。
 
 ![设置界面](docs/editor.png)
 
@@ -12,13 +12,13 @@
 
 | 系列 | 下载入口 | 适用方式 | 安装要求 |
 | --- | --- | --- | --- |
-| **独立覆盖版 v0.3.0-independent.1** | [独立版 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.1) · [完整 ZIP · 安装器修订 4](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.1/Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip) | “全屏 · 独立覆盖（实验）”，目标为 CS 全屏且全屏优化开启 | 一个 ZIP 包含编辑器、组件、.NET 运行时和安装工具；首次安装需管理员权限及明确的预览证书信任操作 |
+| **独立覆盖版 v0.3.0-independent.2** | [独立版 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-independent.2) · [完整 ZIP · 细线实色修复](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.2/Reticle-Independent-v0.3.0-independent.2-win-x64.zip) | “全屏 · 独立覆盖（实验）”，目标为 CS 全屏且全屏优化开启 | 一个 ZIP 包含编辑器、组件、.NET 运行时和安装工具；首次安装需管理员权限及明确的预览证书信任操作 |
 | 稳定桌面版 v0.2.1 | [稳定版 Release](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.2.1) | 全屏窗口化 / 无边框 / 窗口化 | 解压运行编辑器 |
 | Game Bar 预览版 | [编辑器 preview.4](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.4) ＋ [组件 preview.2](https://github.com/yangr8640-eng/reticle-studio/releases/tag/v0.3.0-preview.2) | “全屏 · Game Bar（实验）” | 安装并固定 Game Bar 小组件、开启鼠标穿透 |
 
 普通用户下载 Release 页面 **Assets** 中的程序 ZIP。GitHub 自动生成的 **Source code (zip/tar.gz)** 是源码，需要开发环境构建，不能代替完整安装包。查看全部发行包：[GitHub Releases](https://github.com/yangr8640-eng/reticle-studio/releases)。
 
-**请优先下载文件名含 `installer-fix` 的安装器修订 4（2026-10-28）**：修复 Windows PowerShell 5.1 下双击 CMD 后出现 `GetFullPath`“路径的形式不合法”的问题。程序版本仍为 v0.3.0-independent.1；旧 ZIP 保留在原 Release 中。[修复包 SHA-256](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.1/Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip.sha256) 可用于核对下载文件。
+**最新版 v0.3.0-independent.2 修复不透明度 100% 时细线仍偏淡的问题**，同时包含安装器修订 4。准星采用硬边像素绘制，斜线与圆环会有像素阶梯；[修复说明与验证](docs/opacity-rendering.md)。[安装包 SHA-256](https://github.com/yangr8640-eng/reticle-studio/releases/download/v0.3.0-independent.2/Reticle-Independent-v0.3.0-independent.2-win-x64.zip.sha256) 可用于核对下载文件。
 
 独立版源码分支：[codex/independent-overlay](https://github.com/yangr8640-eng/reticle-studio/tree/codex/independent-overlay)。它的程序、配置和更新系列与旧版分开，不会要求先安装其他 Reticle 版本。
 
@@ -32,7 +32,7 @@
 
 需要 **Windows 10/11 x64**、管理员安装权限。运行时已经包含在包中，使用者无需安装 .NET SDK，也无需先装稳定版、Game Bar 版或 Xbox Game Bar。
 
-下载 `Reticle-Independent-v0.3.0-independent.1-installer-fix-win-x64.zip`，先在 ZIP 的“属性”中选择“解除锁定”（若有此选项），再解压到一个新的空目录。ZIP 自带一层同名根目录；进入同时包含以下内容的那一层：
+下载 `Reticle-Independent-v0.3.0-independent.2-win-x64.zip`，先在 ZIP 的“属性”中选择“解除锁定”（若有此选项），再解压到一个新的空目录。ZIP 自带一层同名根目录；进入同时包含以下内容的那一层：
 
 ```text
 Setup-Independent.cmd
